@@ -1,12 +1,13 @@
-import { Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { HeaderComponent } from './shared/layout/header';
+import { FooterComponent } from './shared/layout/footer';
+import { WhatsappFabComponent } from './shared/layout/whatsapp-fab';
 
 @Component({
-  imports: [RouterOutlet],
   selector: 'app-root',
-  styleUrl: './app.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterOutlet, HeaderComponent, FooterComponent, WhatsappFabComponent],
   templateUrl: './app.html',
 })
-export class App {
-  protected readonly title = signal('vantage-point-villas');
-}
+export class App {}

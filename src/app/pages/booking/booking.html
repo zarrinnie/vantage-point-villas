@@ -1,0 +1,582 @@
+<!-- ===================== Header band ===================== -->
+<section class="bg-ink-900 pt-32 pb-12 md:pt-36">
+  <div class="container-page">
+    <nav aria-label="Breadcrumb" class="mb-6">
+      <ol class="flex items-center gap-2 text-[0.65rem] tracking-[0.2em] text-sand-200/80 uppercase">
+        <li><a routerLink="/" class="transition-colors hover:text-white">Home</a></li>
+        <li aria-hidden="true" class="text-sand-200/40">/</li>
+        <li class="text-white" aria-current="page">Book</li>
+      </ol>
+    </nav>
+
+    <div class="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+      <div>
+        <p class="eyebrow mb-4 text-clay-300">Reservations</p>
+        <h1 class="font-display text-display-sm text-sand-50 md:text-display">
+          @if (confirmation()) {
+            Your villa is held
+          } @else {
+            Book your stay
+          }
+        </h1>
+      </div>
+      <p class="max-w-sm text-sm leading-relaxed text-sand-200/80">
+        No payment is taken here. Confirming sends us a reservation request, which we answer by
+        e-mail — usually the same day.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="section bg-sand-50 pt-10 md:pt-12">
+  <div class="container-page">
+    <!-- ===================== Stepper ===================== -->
+    @if (!confirmation()) {
+      <div class="mb-12 border-b border-ink-900/10 pb-8">
+        <app-stepper [labels]="stepLabels" [current]="step()" (stepSelect)="goTo($event)" />
+      </div>
+    }
+
+    <div class="grid gap-12 lg:grid-cols-[1.6fr_1fr] lg:gap-16">
+      <!-- ===================== Flow ===================== -->
+      <div>
+        @if (confirmation(); as booked) {
+          <!-- ---------- Confirmed ---------- -->
+          <div class="border border-clay-500/40 bg-white/70 p-8 md:p-10">
+            <span class="flex size-12 items-center justify-center rounded-full bg-clay-500 text-white">
+              <app-icon name="check" [size]="24" />
+            </span>
+
+            <h2 class="mt-7 font-display text-3xl md:text-4xl">Thank you, {{ booked.guest.firstName }}</h2>
+            <p class="mt-4 max-w-xl leading-relaxed text-ink-600">
+              We have your request for {{ booked.villaName }}. A confirmation will go to
+              <span class="text-ink-900">{{ booked.guest.email }}</span> with the deposit details and
+              directions to the villa.
+            </p>
+
+            <dl class="mt-9 grid gap-x-10 gap-y-6 border-y border-ink-900/10 py-8 sm:grid-cols-2">
+              <div>
+                <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Reference</dt>
+                <dd class="mt-1.5 font-display text-2xl tracking-wide text-ink-900">{{ booked.reference }}</dd>
+              </div>
+              <div>
+                <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Villa</dt>
+                <dd class="mt-1.5 text-ink-800">{{ booked.villaName }}</dd>
+              </div>
+              <div>
+                <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Check in</dt>
+                <dd class="mt-1.5 text-ink-800">
+                  {{ formatLong(booked.checkIn) }}
+                  <span class="block text-xs text-ink-500">from 15:00</span>
+                </dd>
+              </div>
+              <div>
+                <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Check out</dt>
+                <dd class="mt-1.5 text-ink-800">
+                  {{ formatLong(booked.checkOut) }}
+                  <span class="block text-xs text-ink-500">by 11:00</span>
+                </dd>
+              </div>
+              <div>
+                <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Guests</dt>
+                <dd class="mt-1.5 text-ink-800">{{ guestsText() }} · {{ nightsText() }}</dd>
+              </div>
+              <div>
+                <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Total</dt>
+                <dd class="mt-1.5 font-display text-2xl text-ink-900">{{ money(booked.total) }}</dd>
+              </div>
+            </dl>
+
+            @if (booked.extraIds.length) {
+              <div class="mt-7">
+                <p class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Added to your stay</p>
+                <ul class="mt-3 space-y-2">
+                  @for (extra of bookedExtras(); track extra.id) {
+                    <li class="flex items-center gap-3 text-sm text-ink-700">
+                      <app-icon name="check" [size]="14" class="text-clay-500" />
+                      {{ extra.label }}
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <div class="mt-10 flex flex-wrap gap-4">
+              <a routerLink="/" class="btn-outline">Back to the site</a>
+              <button type="button" class="btn-primary" (click)="startAgain()">
+                Make another booking
+              </button>
+            </div>
+
+            <p class="mt-8 flex gap-3 bg-sand-100 p-5 text-xs leading-relaxed text-ink-600">
+              <app-icon name="info" [size]="15" class="mt-px shrink-0 text-clay-500" />
+              <span>
+                This is a demonstration booking. Nothing was sent and no card was charged — the
+                reference exists only in this browser session.
+              </span>
+            </p>
+          </div>
+        } @else {
+          <!-- ---------- Step 1: Stay ---------- -->
+          @if (step() === 1) {
+            <div>
+              <app-section-heading
+                eyebrow="Step one"
+                title="When would you like to come?"
+                lede="Check-in is from 15:00 and check-out by 11:00. Dates shown struck through are already taken."
+              />
+
+              <div class="mt-10 border border-sand-300 bg-white/60 p-6 md:p-8">
+                <app-date-range-picker
+                  [checkIn]="booking.checkIn()"
+                  [checkOut]="booking.checkOut()"
+                  (rangeChange)="onRange($event)"
+                />
+              </div>
+
+              <div class="mt-8 grid gap-6 border border-sand-300 bg-white/60 p-6 md:grid-cols-2 md:p-8">
+                <app-counter-input
+                  label="Adults"
+                  hint="Aged 13 and over"
+                  [value]="booking.adults()"
+                  [min]="1"
+                  [max]="10"
+                  (valueChange)="booking.setAdults($event)"
+                />
+                <app-counter-input
+                  label="Children"
+                  hint="One extra bed per villa"
+                  [value]="booking.children()"
+                  [min]="0"
+                  [max]="8"
+                  (valueChange)="booking.setChildren($event)"
+                />
+              </div>
+
+              @if (!booking.canContinueFromStay()) {
+                <p class="mt-6 flex items-center gap-2.5 text-sm text-ink-500">
+                  <app-icon name="info" [size]="16" class="text-clay-500" />
+                  Choose a check-in and a check-out date to continue.
+                </p>
+              }
+            </div>
+          }
+
+          <!-- ---------- Step 2: Villa ---------- -->
+          @if (step() === 2) {
+            <div>
+              <app-section-heading
+                eyebrow="Step two"
+                title="Choose your villa"
+                [lede]="villaStepLede()"
+              />
+
+              <ul class="mt-10 space-y-5">
+                @for (candidate of candidates(); track candidate.villa.slug) {
+                  <li>
+                    <button
+                      type="button"
+                      class="flex w-full flex-col gap-5 border p-5 text-left transition-colors sm:flex-row sm:items-center md:p-6"
+                      [class]="cardClass(candidate)"
+                      [disabled]="!candidate.available || !candidate.meetsMinNights"
+                      [attr.aria-pressed]="booking.villaSlug() === candidate.villa.slug"
+                      (click)="choose(candidate.villa.slug)"
+                    >
+                      <img
+                        [src]="candidate.villa.images[0].url"
+                        [alt]="candidate.villa.images[0].alt"
+                        loading="lazy"
+                        decoding="async"
+                        width="1600"
+                        height="1067"
+                        class="aspect-4/3 w-full shrink-0 object-cover sm:w-44"
+                      />
+
+                      <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                          <h3 class="font-display text-2xl leading-snug">{{ candidate.villa.name }}</h3>
+                          <p class="text-right">
+                            <span class="block font-display text-xl text-ink-900">
+                              {{ money(quoteFor(candidate.villa).total) }}
+                            </span>
+                            <span class="block text-[0.65rem] tracking-[0.1em] text-ink-500 uppercase">
+                              total, all in
+                            </span>
+                          </p>
+                        </div>
+
+                        <p class="mt-2 text-sm leading-relaxed text-ink-600">
+                          {{ candidate.villa.tagline }}
+                        </p>
+
+                        <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[0.7rem] text-ink-500">
+                          <li class="flex items-center gap-1.5">
+                            <app-icon name="guests" [size]="14" /> sleeps {{ candidate.villa.maxGuests }}
+                          </li>
+                          <li class="flex items-center gap-1.5">
+                            <app-icon name="bed" [size]="14" /> {{ candidate.villa.bedrooms }} bed
+                          </li>
+                          <li class="flex items-center gap-1.5">
+                            <app-icon name="area" [size]="14" /> {{ candidate.villa.landSize }} m²
+                          </li>
+                        </ul>
+
+                        @if (!candidate.available) {
+                          <p class="mt-4 flex items-center gap-2 text-xs text-red-800">
+                            <app-icon name="warning" [size]="14" />
+                            Taken on {{ blockedText(candidate.blockedNights) }}
+                          </p>
+                        } @else if (!candidate.meetsMinNights) {
+                          <p class="mt-4 flex items-center gap-2 text-xs text-ink-500">
+                            <app-icon name="info" [size]="14" />
+                            Minimum stay of {{ candidate.villa.minNights }} nights
+                          </p>
+                        } @else if (booking.villaSlug() === candidate.villa.slug) {
+                          <p class="mt-4 flex items-center gap-2 text-xs text-clay-600">
+                            <app-icon name="check" [size]="14" />
+                            Selected
+                          </p>
+                        }
+                      </div>
+                    </button>
+                  </li>
+                }
+              </ul>
+
+              @if (candidates().length === 0) {
+                <div class="mt-8 border border-sand-300 bg-white/60 p-8 text-center">
+                  <p class="font-display text-2xl">No villa sleeps {{ booking.guests() }} guests</p>
+                  <p class="mt-3 text-sm text-ink-600">
+                    The largest villa sleeps seven. We can hold two villas side by side for larger
+                    parties — ask us and we will set it up.
+                  </p>
+                  <a routerLink="/contact" class="btn-primary mt-7">Ask about two villas</a>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- ---------- Step 3: Extras ---------- -->
+          @if (step() === 3) {
+            <div>
+              <app-section-heading
+                eyebrow="Step three"
+                title="Anything to add?"
+                lede="All optional, all arranged before you arrive. You can add them later too."
+              />
+
+              <ul class="mt-10 space-y-4">
+                @for (extra of booking.allExtras; track extra.id) {
+                  <li>
+                    <label
+                      class="flex cursor-pointer items-start gap-4 border p-5 transition-colors md:p-6"
+                      [class]="
+                        booking.hasExtra(extra.id)
+                          ? 'border-clay-500 bg-clay-500/5'
+                          : 'border-sand-300 bg-white/60 hover:border-clay-400'
+                      "
+                    >
+                      <input
+                        type="checkbox"
+                        class="mt-1 size-4 shrink-0 accent-clay-500"
+                        [checked]="booking.hasExtra(extra.id)"
+                        (change)="booking.toggleExtra(extra.id)"
+                      />
+                      <span class="min-w-0 flex-1">
+                        <span class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                          <span class="flex items-center gap-2.5 font-display text-xl text-ink-900">
+                            <app-icon [name]="extra.icon" [size]="18" class="text-clay-500" />
+                            {{ extra.label }}
+                          </span>
+                          <span class="text-right">
+                            <span class="block text-ink-900">{{ money(extraAmount(extra)) }}</span>
+                            <span class="block text-[0.65rem] text-ink-500">{{ extraDetail(extra) }}</span>
+                          </span>
+                        </span>
+                        <span class="mt-2 block text-sm leading-relaxed text-ink-600">
+                          {{ extra.description }}
+                        </span>
+                      </span>
+                    </label>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+
+          <!-- ---------- Step 4: Details ---------- -->
+          @if (step() === 4) {
+            <div>
+              <app-section-heading
+                eyebrow="Step four"
+                title="Who is coming?"
+                lede="We need enough to confirm the villa and meet you at the gate."
+              />
+
+              <form [formGroup]="form" class="mt-10 space-y-6" (ngSubmit)="submitDetails()">
+                <div class="grid gap-6 sm:grid-cols-2">
+                  <div>
+                    <label class="field-label" for="firstName">First name</label>
+                    <input
+                      id="firstName"
+                      type="text"
+                      class="field"
+                      [class.field-invalid]="invalid('firstName')"
+                      formControlName="firstName"
+                      autocomplete="given-name"
+                    />
+                    @if (invalid('firstName')) {
+                      <p class="field-error"><app-icon name="warning" [size]="13" /> Please tell us your first name.</p>
+                    }
+                  </div>
+
+                  <div>
+                    <label class="field-label" for="lastName">Last name</label>
+                    <input
+                      id="lastName"
+                      type="text"
+                      class="field"
+                      [class.field-invalid]="invalid('lastName')"
+                      formControlName="lastName"
+                      autocomplete="family-name"
+                    />
+                    @if (invalid('lastName')) {
+                      <p class="field-error"><app-icon name="warning" [size]="13" /> Please tell us your last name.</p>
+                    }
+                  </div>
+
+                  <div>
+                    <label class="field-label" for="email">E-mail</label>
+                    <input
+                      id="email"
+                      type="email"
+                      class="field"
+                      [class.field-invalid]="invalid('email')"
+                      formControlName="email"
+                      autocomplete="email"
+                      inputmode="email"
+                    />
+                    @if (invalid('email')) {
+                      <p class="field-error">
+                        <app-icon name="warning" [size]="13" />
+                        @if (form.controls.email.hasError('required')) {
+                          We need an e-mail address to send the confirmation to.
+                        } @else {
+                          That does not look like an e-mail address.
+                        }
+                      </p>
+                    }
+                  </div>
+
+                  <div>
+                    <label class="field-label" for="phone">Telephone</label>
+                    <input
+                      id="phone"
+                      type="tel"
+                      class="field"
+                      [class.field-invalid]="invalid('phone')"
+                      formControlName="phone"
+                      autocomplete="tel"
+                      placeholder="+62 ..."
+                    />
+                    @if (invalid('phone')) {
+                      <p class="field-error">
+                        <app-icon name="warning" [size]="13" />
+                        A number we can reach you on, including the country code.
+                      </p>
+                    }
+                  </div>
+
+                  <div>
+                    <label class="field-label" for="country">Country of residence</label>
+                    <input
+                      id="country"
+                      type="text"
+                      class="field"
+                      [class.field-invalid]="invalid('country')"
+                      formControlName="country"
+                      autocomplete="country-name"
+                    />
+                    @if (invalid('country')) {
+                      <p class="field-error"><app-icon name="warning" [size]="13" /> Please add your country.</p>
+                    }
+                  </div>
+
+                  <div>
+                    <label class="field-label" for="arrivalTime">Approximate arrival time</label>
+                    <select id="arrivalTime" class="field" formControlName="arrivalTime">
+                      <option value="">Not sure yet</option>
+                      @for (slot of arrivalSlots; track slot) {
+                        <option [value]="slot">{{ slot }}</option>
+                      }
+                    </select>
+                    <p class="mt-1.5 text-xs text-ink-500">Reception is staffed until 23:59.</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="field-label" for="requests">Anything we should know?</label>
+                  <textarea
+                    id="requests"
+                    rows="4"
+                    class="field resize-y"
+                    formControlName="requests"
+                    placeholder="Flight number, a cot for a toddler, dietary needs, an anniversary…"
+                  ></textarea>
+                </div>
+
+                <label class="flex items-start gap-3 text-sm text-ink-600">
+                  <input type="checkbox" class="mt-1 size-4 shrink-0 accent-clay-500" formControlName="terms" />
+                  <span>
+                    I have read the
+                    <a routerLink="/terms" class="text-ink-900 underline decoration-clay-500 underline-offset-4">
+                      booking terms
+                    </a>
+                    and the
+                    <a routerLink="/privacy" class="text-ink-900 underline decoration-clay-500 underline-offset-4">
+                      privacy policy
+                    </a>.
+                  </span>
+                </label>
+                @if (invalid('terms')) {
+                  <p class="field-error"><app-icon name="warning" [size]="13" /> Please accept the terms to continue.</p>
+                }
+
+                <button type="submit" class="btn-primary">
+                  Review the booking
+                  <app-icon name="arrow-right" [size]="15" />
+                </button>
+              </form>
+            </div>
+          }
+
+          <!-- ---------- Step 5: Review ---------- -->
+          @if (step() === 5) {
+            <div>
+              <app-section-heading
+                eyebrow="Last step"
+                title="Check it over"
+                lede="Nothing is charged. Confirming sends the request to reservations."
+              />
+
+              <div class="mt-10 border border-sand-300 bg-white/60">
+                <dl class="divide-y divide-ink-900/10">
+                  <div class="flex items-start justify-between gap-6 p-6">
+                    <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Villa</dt>
+                    <dd class="text-right text-ink-800">
+                      {{ booking.villa()?.name }}
+                      <button type="button" class="mt-1 block text-xs text-clay-600 underline" (click)="goTo(2)">
+                        change
+                      </button>
+                    </dd>
+                  </div>
+                  <div class="flex items-start justify-between gap-6 p-6">
+                    <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Dates</dt>
+                    <dd class="text-right text-ink-800">
+                      {{ formatLong(booking.checkIn()!) }} → {{ formatLong(booking.checkOut()!) }}
+                      <span class="block text-xs text-ink-500">{{ nightsText() }}</span>
+                      <button type="button" class="mt-1 block w-full text-right text-xs text-clay-600 underline" (click)="goTo(1)">
+                        change
+                      </button>
+                    </dd>
+                  </div>
+                  <div class="flex items-start justify-between gap-6 p-6">
+                    <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Guests</dt>
+                    <dd class="text-right text-ink-800">{{ guestsText() }}</dd>
+                  </div>
+                  <div class="flex items-start justify-between gap-6 p-6">
+                    <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Extras</dt>
+                    <dd class="text-right text-ink-800">
+                      @if (booking.extras().length) {
+                        <ul class="space-y-1">
+                          @for (extra of booking.extras(); track extra.id) {
+                            <li>{{ extra.label }}</li>
+                          }
+                        </ul>
+                      } @else {
+                        <span class="text-ink-500">None</span>
+                      }
+                      <button type="button" class="mt-1 block w-full text-right text-xs text-clay-600 underline" (click)="goTo(3)">
+                        change
+                      </button>
+                    </dd>
+                  </div>
+                  <div class="flex items-start justify-between gap-6 p-6">
+                    <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Lead guest</dt>
+                    <dd class="text-right text-ink-800">
+                      {{ booking.guest().firstName }} {{ booking.guest().lastName }}
+                      <span class="block text-xs text-ink-500">{{ booking.guest().email }}</span>
+                      <span class="block text-xs text-ink-500">{{ booking.guest().phone }}</span>
+                      <button type="button" class="mt-1 block w-full text-right text-xs text-clay-600 underline" (click)="goTo(4)">
+                        change
+                      </button>
+                    </dd>
+                  </div>
+                  @if (booking.guest().requests) {
+                    <div class="flex items-start justify-between gap-6 p-6">
+                      <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Requests</dt>
+                      <dd class="max-w-sm text-right text-sm text-ink-700">{{ booking.guest().requests }}</dd>
+                    </div>
+                  }
+                </dl>
+              </div>
+
+              @if (booking.selectionIssue(); as issue) {
+                <p class="mt-6 flex items-center gap-2.5 border border-red-700/40 bg-red-50 p-4 text-sm text-red-900">
+                  <app-icon name="warning" [size]="16" />
+                  {{ issue }}
+                </p>
+              }
+
+              <button
+                type="button"
+                class="btn-primary mt-9 w-full justify-center sm:w-auto"
+                [disabled]="!canConfirm() || booking.submitting()"
+                (click)="confirm()"
+              >
+                @if (booking.submitting()) {
+                  Sending…
+                } @else {
+                  Confirm booking · {{ money(booking.quote().total) }}
+                }
+              </button>
+            </div>
+          }
+
+          <!-- ---------- Step navigation ---------- -->
+          <div class="mt-12 flex flex-wrap items-center justify-between gap-5 border-t border-ink-900/10 pt-8">
+            <button
+              type="button"
+              class="link-underline"
+              [disabled]="step() === 1"
+              [class.invisible]="step() === 1"
+              (click)="booking.back()"
+            >
+              <app-icon name="arrow-left" [size]="14" />
+              Back
+            </button>
+
+            @if (step() < 4) {
+              <button type="button" class="btn-primary" [disabled]="!canAdvance()" (click)="advance()">
+                Continue
+                <app-icon name="arrow-right" [size]="15" />
+              </button>
+            }
+          </div>
+
+          <p class="mt-10 text-sm text-ink-500">
+            Would rather use a platform?
+            <a [href]="site.bookingComUrl" target="_blank" rel="noopener" class="link-underline ml-1 text-ink-700">
+              Book on Booking.com
+            </a>
+          </p>
+        }
+      </div>
+
+      <!-- ===================== Summary ===================== -->
+      <div class="lg:sticky lg:top-28 lg:self-start">
+        <app-price-summary />
+      </div>
+    </div>
+  </div>
+</section>

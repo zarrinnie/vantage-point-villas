@@ -1,0 +1,214 @@
+@if (villa(); as v) {
+  <app-page-hero
+    [eyebrow]="v.tagline"
+    [title]="v.name"
+    [lede]="v.summary"
+    [image]="v.images[0].url"
+    [crumbs]="[{ label: 'Villas', path: '/villas' }, { label: v.name }]"
+    [meta]="[
+      { icon: 'guests', label: 'Sleeps ' + v.maxGuests },
+      { icon: 'bed', label: v.bedrooms + (v.bedrooms === 1 ? ' bedroom' : ' bedrooms') },
+      { icon: 'bath', label: v.bathrooms + (v.bathrooms === 1 ? ' bathroom' : ' bathrooms') },
+      { icon: 'area', label: v.landSize + ' m² plot' },
+      { icon: 'pool', label: 'Private pool' },
+    ]"
+  />
+
+  <!-- ===================== Story + booking panel ===================== -->
+  <section class="section bg-sand-50">
+    <div class="container-page grid gap-14 lg:grid-cols-[1.4fr_1fr] lg:gap-16">
+      <div>
+        <div appReveal>
+          <p class="eyebrow eyebrow-rule mb-6">The villa</p>
+          @for (paragraph of v.story; track paragraph) {
+            <p class="mb-6 text-[1.05rem] leading-[1.75] text-ink-700 last:mb-0">{{ paragraph }}</p>
+          }
+        </div>
+
+        <!-- Specification -->
+        <dl class="mt-12 grid grid-cols-2 gap-x-10 gap-y-7 border-t border-ink-900/10 pt-10 sm:grid-cols-3" appReveal>
+          <div>
+            <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Sleeps</dt>
+            <dd class="mt-1.5 font-display text-2xl text-ink-900">{{ v.maxGuests }} guests</dd>
+          </div>
+          <div>
+            <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Beds</dt>
+            <dd class="mt-1.5 text-sm leading-relaxed text-ink-700">{{ v.bedConfiguration }}</dd>
+          </div>
+          <div>
+            <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Bathrooms</dt>
+            <dd class="mt-1.5 font-display text-2xl text-ink-900">{{ v.bathrooms }}</dd>
+          </div>
+          <div>
+            <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Plot</dt>
+            <dd class="mt-1.5 font-display text-2xl text-ink-900">{{ v.landSize }} m²</dd>
+          </div>
+          <div>
+            <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Interior</dt>
+            <dd class="mt-1.5 font-display text-2xl text-ink-900">{{ v.livingSize }} m²</dd>
+          </div>
+          <div>
+            <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Minimum stay</dt>
+            <dd class="mt-1.5 font-display text-2xl text-ink-900">{{ v.minNights }} nights</dd>
+          </div>
+        </dl>
+
+        <!-- Highlights -->
+        <div class="mt-12" appReveal>
+          <h2 class="font-display text-2xl">What stands out</h2>
+          <ul class="mt-6 grid gap-4 sm:grid-cols-2">
+            @for (highlight of v.highlights; track highlight) {
+              <li class="flex items-start gap-3 text-sm leading-relaxed text-ink-600">
+                <span class="mt-0.5 shrink-0 text-clay-500"><app-icon name="check" [size]="15" /></span>
+                {{ highlight }}
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+
+      <!-- Sticky rate + availability panel -->
+      <aside class="lg:sticky lg:top-28 lg:self-start">
+        <div class="border border-sand-300 bg-white/70 p-7">
+          <p class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Rate from</p>
+          <p class="mt-2 flex items-baseline gap-2">
+            <span class="font-display text-4xl text-ink-900">{{ money(v.nightlyRate) }}</span>
+            <span class="text-sm text-ink-500">per night</span>
+          </p>
+          <p class="mt-2 text-xs leading-relaxed text-ink-500">
+            Before tax and service. Peak nights in July, August and over New Year carry a 25%
+            supplement; stays of seven nights or more are reduced.
+          </p>
+
+          <div class="my-6 rule"></div>
+
+          <p class="mb-4 text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">
+            Check these dates
+          </p>
+
+          <app-date-range-picker
+            [checkIn]="checkIn()"
+            [checkOut]="checkOut()"
+            [villaSlug]="v.slug"
+            (rangeChange)="onRange($event)"
+          />
+
+          @if (checkIn() && checkOut()) {
+            <div class="mt-6 bg-sand-100 p-5">
+              <div class="flex items-baseline justify-between gap-4">
+                <p class="text-sm text-ink-700">{{ nightsText() }}</p>
+                <p class="font-display text-2xl text-ink-900">{{ money(estimate()) }}</p>
+              </div>
+              <p class="mt-1 text-xs text-ink-500">
+                Estimate for the villa, tax and service included.
+              </p>
+              <a
+                routerLink="/book"
+                [queryParams]="{ villa: v.slug, checkIn: checkIn(), checkOut: checkOut() }"
+                class="btn-primary mt-5 w-full justify-center"
+              >
+                Continue to booking
+                <app-icon name="arrow-right" [size]="15" />
+              </a>
+            </div>
+          } @else {
+            <a routerLink="/book" [queryParams]="{ villa: v.slug }" class="btn-primary mt-6 w-full justify-center">
+              Start a booking
+            </a>
+          }
+
+          <p class="mt-5 text-center text-xs text-ink-500">
+            or
+            <a [href]="site.whatsappHref" target="_blank" rel="noopener" class="link-underline ml-1 text-ink-700">
+              ask on WhatsApp
+            </a>
+          </p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ===================== Gallery ===================== -->
+  <section class="section bg-sand-100 pt-4 md:pt-8">
+    <div class="container-page">
+      <div class="mb-12" appReveal>
+        <app-section-heading
+          eyebrow="Photographs"
+          [title]="'Inside ' + v.name"
+          lede="Placeholder imagery — the real photography of this villa will replace it."
+        />
+      </div>
+      <app-gallery-grid [images]="v.images" [columns]="3" [masonry]="false" />
+    </div>
+  </section>
+
+  <!-- ===================== Amenities ===================== -->
+  <section class="section bg-sand-50">
+    <div class="container-page grid gap-14 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
+      <div appReveal>
+        <app-section-heading
+          eyebrow="Included"
+          title="Everything in this villa"
+          lede="All of it comes as standard, in every villa on the property."
+        />
+        <a routerLink="/services" class="link-underline mt-8 inline-flex">
+          Extras you can add
+          <app-icon name="arrow-right" [size]="14" />
+        </a>
+      </div>
+
+      <ul class="grid gap-x-8 gap-y-5 sm:grid-cols-2" appReveal>
+        @for (amenity of amenities(); track amenity.id) {
+          <li class="flex items-center gap-4 border-b border-ink-900/8 pb-4">
+            <span class="shrink-0 text-clay-500"><app-icon [name]="amenity.icon" [size]="19" /></span>
+            <span class="text-sm text-ink-700">{{ amenity.label }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== Other villas ===================== -->
+  <section class="section bg-sand-100">
+    <div class="container-page">
+      <div class="mb-14 flex flex-col gap-8 md:flex-row md:items-end md:justify-between" appReveal>
+        <app-section-heading eyebrow="Also available" title="Other villas on the property" />
+        <a routerLink="/villas" class="link-underline shrink-0">
+          All five villas
+          <app-icon name="arrow-right" [size]="14" />
+        </a>
+      </div>
+
+      <div class="grid gap-12 md:grid-cols-2 lg:gap-8">
+        @for (other of siblings(); track other.slug; let i = $index) {
+          <div [appReveal]="i * 110">
+            <app-villa-card [villa]="other" />
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <app-cta-band
+    eyebrow="Reservations"
+    [title]="'Hold ' + v.name + ' for your dates'"
+    lede="Send us your dates and we will confirm by e-mail, usually the same day."
+  />
+} @else {
+  <!-- Unknown slug -->
+  <section class="flex min-h-[70svh] items-center bg-sand-50 pt-24">
+    <div class="container-prose text-center">
+      <p class="eyebrow justify-center">Not found</p>
+      <h1 class="mt-6 font-display text-display-sm md:text-display">
+        We do not have a villa by that name
+      </h1>
+      <p class="mt-5 text-ink-600">
+        The link may be out of date. All five villas are listed on the villas page.
+      </p>
+      <a routerLink="/villas" class="btn-primary mt-9">
+        See the villas
+        <app-icon name="arrow-right" [size]="15" />
+      </a>
+    </div>
+  </section>
+}

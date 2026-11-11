@@ -1,0 +1,431 @@
+<!-- ========================= Hero ========================= -->
+<section class="relative isolate flex min-h-svh items-center justify-center overflow-hidden bg-ink-900">
+  <img
+    [src]="heroImage"
+    alt="A private pool villa at Vantage Point Villas in Ungasan, Bali"
+    fetchpriority="high"
+    width="2400"
+    height="1350"
+    class="absolute inset-0 size-full animate-ken-burns object-cover"
+  />
+  <div class="absolute inset-0 bg-ink-900/45"></div>
+  <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-ink-900/60 to-transparent"></div>
+
+  <div class="container-page relative pt-40 pb-32 text-center">
+    <p class="eyebrow mb-7 justify-center text-sand-100 animate-fade-in">
+      Ungasan · Uluwatu · Bali
+    </p>
+
+    <h1
+      class="mx-auto max-w-5xl font-display text-[3.25rem] leading-[1] text-white text-shadow-hero animate-fade-up sm:text-display-lg lg:text-display-xl"
+    >
+      The <em class="italic">quiet</em> side of Uluwatu.
+    </h1>
+
+    <p class="lede mx-auto mt-7 max-w-xl text-sand-100 animate-fade-up">
+      Private pool villas on their own walled plots, ten minutes from the Bukit beaches.
+    </p>
+
+    <div class="mt-11 flex flex-col items-center justify-center gap-6 sm:flex-row sm:gap-8 animate-fade-up">
+      <a routerLink="/book" class="btn-glass px-10">Book now</a>
+      <a
+        routerLink="/gallery"
+        class="group inline-flex items-center gap-3 text-[0.72rem] font-medium tracking-[0.14em] text-white uppercase"
+      >
+        <span
+          class="flex size-11 items-center justify-center rounded-full border border-white/50 transition-colors group-hover:bg-white group-hover:text-ink-900"
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" class="translate-x-px">
+            <path d="M7 4.5v15l12-7.5z" fill="currentColor" />
+          </svg>
+        </span>
+        Take the tour
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Quick search, straddling the bottom of the hero -->
+<div class="container-page relative z-20 -mt-12 md:-mt-10">
+  <div class="mx-auto max-w-4xl">
+    <app-booking-bar [floating]="true" />
+    <p class="mt-4 flex items-center justify-center gap-2 text-xs text-ink-500">
+      <app-icon name="sparkle" [size]="14" class="text-clay-500" />
+      Book direct from {{ money(lowestRate) }} a night — no platform commission
+    </p>
+  </div>
+</div>
+
+<!-- ========================= Intro statement ========================= -->
+<section class="section bg-sand-50">
+  <div class="container-page text-center" appReveal>
+    <p class="eyebrow justify-center">Welcome to Vantage Point</p>
+    <h2 class="mx-auto mt-7 max-w-4xl font-display text-display-sm md:text-display lg:text-display-lg">
+      Charming, private villas in the heart of Uluwatu
+    </h2>
+    <p class="lede mx-auto mt-8 max-w-2xl">
+      There is no lobby here and no restaurant with a queue. What there is instead is a set of small
+      houses on 200–300 sqm of their own ground — your own pool, your own garden, your own gate —
+      looked after properly, a short drive from the cliffs at Uluwatu and the sand at Green Bowl.
+    </p>
+
+    <dl class="mx-auto mt-16 grid max-w-5xl grid-cols-2 gap-y-10 md:grid-cols-4">
+      @for (stat of stats; track stat.label; let i = $index) {
+        <div
+          class="flex flex-col-reverse px-4"
+          [class]="i > 0 ? 'border-ink-900/10 md:border-l' : ''"
+        >
+          <dt class="mt-2 text-[0.65rem] tracking-[0.18em] text-ink-500 uppercase">
+            {{ stat.label }}
+          </dt>
+          <dd class="font-display text-4xl tracking-[-0.035em] text-ink-900 md:text-5xl">
+            {{ stat.value }}
+          </dd>
+        </div>
+      }
+    </dl>
+  </div>
+</section>
+
+<!-- ========================= Villas carousel ========================= -->
+<section class="section overflow-hidden bg-sand-100">
+  <div class="container-page">
+    <div class="flex flex-col gap-8 md:flex-row md:items-end md:justify-between" appReveal>
+      <app-section-heading
+        eyebrow="The villas"
+        title="Five ways to stay"
+        lede="From a studio with a plunge pool to a three-bedroom house with a table for eight."
+      />
+      <a routerLink="/villas" class="btn-outline shrink-0 self-start md:self-auto">
+        All villas
+        <app-icon name="arrow-right" [size]="14" />
+      </a>
+    </div>
+
+    <div class="mt-14" appReveal>
+      <app-villa-carousel [villas]="villas()" />
+    </div>
+  </div>
+</section>
+
+<!-- ========================= Feature statement + amenities ========================= -->
+<section class="section overflow-hidden bg-sand-50">
+  <div class="container-page grid gap-14 lg:grid-cols-[0.95fr_1.05fr] lg:gap-24">
+    <div appReveal>
+      <p class="eyebrow eyebrow-rule">In every villa</p>
+      <h2 class="mt-6 font-display text-display-sm md:text-display lg:text-display-lg">
+        Every villa, appointed the same way
+      </h2>
+      <p class="lede mt-7 max-w-lg">
+        Breakfast comes to your terrace when you want it. The kitchen has real pans. Housekeeping
+        arrives in the morning and leaves the place as you found it on the first day. Nothing here
+        is an upgrade.
+      </p>
+      <div class="mt-10 flex flex-wrap items-center gap-8">
+        <a routerLink="/villas" class="btn-primary">Discover our villas</a>
+        <a routerLink="/services" class="link-underline">Services &amp; extras</a>
+      </div>
+    </div>
+
+    <ul class="grid content-center gap-x-8 gap-y-6 sm:grid-cols-2" appReveal revealFrom="right">
+      @for (amenity of amenities; track amenity.id) {
+        <li class="flex items-start gap-4 border-t border-ink-900/10 pt-5">
+          <span class="mt-0.5 shrink-0 text-clay-500">
+            <app-icon [name]="amenity.icon" [size]="19" />
+          </span>
+          <div>
+            <p class="text-sm font-medium text-ink-800">{{ amenity.label }}</p>
+            @if (amenity.description) {
+              <p class="mt-0.5 text-xs leading-relaxed text-ink-500">{{ amenity.description }}</p>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  </div>
+</section>
+
+<!-- ========================= A life of leisure ========================= -->
+<section class="grid overflow-hidden bg-palm-900 lg:min-h-[85svh] lg:grid-cols-2">
+  <div class="relative min-h-[60svh] overflow-hidden lg:min-h-0">
+    <img
+      [src]="leisureImage"
+      alt="The sea at dusk off the Bukit peninsula"
+      loading="lazy"
+      decoding="async"
+      width="1400"
+      height="1600"
+      class="absolute inset-0 size-full object-cover"
+    />
+  </div>
+
+  <div class="flex items-center px-6 py-20 sm:px-10 lg:px-20 xl:px-24" appReveal revealFrom="right">
+    <div class="max-w-lg">
+      <p class="eyebrow text-sand-200/80">Slow days on the Bukit</p>
+      <h2 class="mt-6 font-display text-display-sm text-sand-50 md:text-display lg:text-display-lg">
+        A life of leisure
+      </h2>
+      <p class="lede mt-7 text-sand-200">
+        Mornings in the pool before the heat. Lunch on the terrace. A sunset at the cliffs, then
+        dinner back home under the frangipani. Behind your own wall, the day takes the shape you
+        give it.
+      </p>
+      <blockquote class="mt-8 border-l border-clay-400/60 pl-5">
+        <p class="font-display text-2xl leading-snug text-sand-50 italic">
+          “By the second morning you stop noticing there are neighbours at all.”
+        </p>
+      </blockquote>
+      <a routerLink="/book" class="btn-glass mt-10">Book now</a>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= Experiences ========================= -->
+<section class="section bg-sand-50">
+  <div class="container-page">
+    <div class="grid gap-8 lg:grid-cols-2 lg:items-end" appReveal>
+      <app-section-heading
+        eyebrow="Around Uluwatu"
+        title="Surf, sunsets &amp; slow afternoons"
+      />
+      <p class="lede max-w-lg lg:justify-self-end">
+        You are never more than a few minutes from the breaks, the beaches and the clifftop temples
+        of the Bukit — and back behind your own gate whenever you like.
+      </p>
+    </div>
+
+    <div class="mt-16 grid gap-6 md:grid-cols-3 lg:gap-8">
+      @for (exp of experiences; track exp.title; let i = $index) {
+        <article
+          class="group relative isolate flex aspect-4/5 flex-col justify-end overflow-hidden bg-ink-900"
+          [appReveal]="i * 120"
+        >
+          <img
+            [src]="exp.image"
+            [alt]="exp.alt"
+            loading="lazy"
+            decoding="async"
+            width="1000"
+            height="1250"
+            class="absolute inset-0 size-full object-cover opacity-85 transition-transform duration-[1.6s] ease-editorial group-hover:scale-[1.06]"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-ink-900/85 via-ink-900/20 to-transparent"></div>
+          <div class="relative p-7 md:p-8">
+            <h3 class="font-display text-3xl text-white md:text-[2.1rem]">{{ exp.title }}</h3>
+            <p class="mt-3 text-sm leading-relaxed text-sand-200">{{ exp.description }}</p>
+          </div>
+        </article>
+      }
+    </div>
+
+    <div class="mt-16 grid gap-12 lg:grid-cols-[1fr_auto] lg:items-end" appReveal>
+      <ul class="grid gap-x-12 sm:grid-cols-2">
+        @for (place of nearby; track place.name) {
+          <li class="flex items-baseline justify-between gap-6 border-b border-ink-900/10 py-4">
+            <p class="text-[0.95rem] text-ink-900">{{ place.name }}</p>
+            <p class="shrink-0 text-[0.68rem] tracking-[0.12em] text-ink-500 uppercase">
+              {{ place.distance }}
+            </p>
+          </li>
+        }
+      </ul>
+      <a [href]="whatsapp" target="_blank" rel="noopener" class="btn-outline self-start lg:self-end">
+        <app-icon name="whatsapp" [size]="15" />
+        Let our concierge assist you
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= Why ========================= -->
+<section class="section bg-sand-100">
+  <div class="container-page">
+    <app-section-heading
+      eyebrow="Why Vantage Point"
+      title="Small, private, and properly run"
+      align="center"
+    />
+
+    <div class="mt-16 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+      @for (benefit of benefits; track benefit.title; let i = $index) {
+        <div class="text-center" [appReveal]="i * 90">
+          <span
+            class="mx-auto flex size-14 items-center justify-center rounded-full border border-ink-900/15 text-clay-600"
+          >
+            <app-icon [name]="benefit.icon" [size]="20" />
+          </span>
+          <h3 class="mt-6 font-display text-2xl leading-snug">{{ benefit.title }}</h3>
+          <p class="mt-3 text-sm leading-relaxed text-ink-600">{{ benefit.description }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ========================= Mosaic gallery ========================= -->
+<section class="section bg-sand-50">
+  <div class="container-page">
+    <div class="flex flex-col gap-8 md:flex-row md:items-end md:justify-between" appReveal>
+      <app-section-heading eyebrow="Gallery" title="Simply, privately yours" />
+      <a routerLink="/gallery" class="btn-outline shrink-0 self-start md:self-auto">
+        View the gallery
+        <app-icon name="arrow-right" [size]="14" />
+      </a>
+    </div>
+
+    <div class="mt-14 grid auto-rows-[12rem] grid-cols-2 gap-3 md:auto-rows-[16rem] md:grid-cols-4 md:gap-4" appReveal>
+      <a routerLink="/gallery" class="group overflow-hidden bg-sand-200 md:row-span-2">
+        <img
+          [src]="mosaic[0].url"
+          [alt]="mosaic[0].alt"
+          loading="lazy"
+          decoding="async"
+          class="size-full object-cover transition-transform duration-[1.4s] ease-editorial group-hover:scale-[1.05]"
+        />
+      </a>
+      <a routerLink="/gallery" class="group overflow-hidden bg-sand-200">
+        <img
+          [src]="mosaic[1].url"
+          [alt]="mosaic[1].alt"
+          loading="lazy"
+          decoding="async"
+          class="size-full object-cover transition-transform duration-[1.4s] ease-editorial group-hover:scale-[1.05]"
+        />
+      </a>
+      <div class="flex flex-col items-center justify-center bg-palm-900 p-6 text-center">
+        <p class="font-display text-3xl leading-none tracking-[-0.035em] text-white md:text-4xl">
+          Vantage Point
+        </p>
+        <p class="mt-3 text-[0.55rem] font-medium tracking-[0.42em] text-clay-300 uppercase">
+          Villas · Uluwatu
+        </p>
+      </div>
+      <a routerLink="/gallery" class="group overflow-hidden bg-sand-200 md:row-span-2">
+        <img
+          [src]="mosaic[2].url"
+          [alt]="mosaic[2].alt"
+          loading="lazy"
+          decoding="async"
+          class="size-full object-cover transition-transform duration-[1.4s] ease-editorial group-hover:scale-[1.05]"
+        />
+      </a>
+      <a routerLink="/gallery" class="group col-span-2 overflow-hidden bg-sand-200">
+        <img
+          [src]="mosaic[3].url"
+          [alt]="mosaic[3].alt"
+          loading="lazy"
+          decoding="async"
+          class="size-full object-cover transition-transform duration-[1.4s] ease-editorial group-hover:scale-[1.05]"
+        />
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= Offers ========================= -->
+<section class="section bg-sand-100">
+  <div class="container-page">
+    <div class="flex flex-col gap-8 md:flex-row md:items-end md:justify-between" appReveal>
+      <app-section-heading
+        eyebrow="Offers"
+        title="Reasons to stay a little longer"
+        lede="Booking direct is the cheapest way in. These packages make it cheaper still."
+      />
+      <a routerLink="/offers" class="btn-outline shrink-0 self-start md:self-auto">
+        All offers
+        <app-icon name="arrow-right" [size]="14" />
+      </a>
+    </div>
+
+    <div class="mt-16 grid gap-8 md:grid-cols-2">
+      @for (offer of offers; track offer.slug; let i = $index) {
+        <article class="group relative isolate flex min-h-[28rem] flex-col justify-end overflow-hidden bg-ink-900" [appReveal]="i * 110">
+          <img
+            [src]="offer.image"
+            [alt]="offer.name"
+            loading="lazy"
+            decoding="async"
+            width="1200"
+            height="900"
+            class="absolute inset-0 size-full object-cover opacity-70 transition-transform duration-[1.6s] ease-editorial group-hover:scale-[1.05]"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-ink-900/90 via-ink-900/35 to-transparent"></div>
+
+          <div class="relative p-8 md:p-10">
+            <span class="inline-block rounded-full bg-clay-500 px-3.5 py-1.5 text-[0.6rem] font-medium tracking-[0.2em] text-white uppercase">
+              {{ offer.badge }}
+            </span>
+            <h3 class="mt-5 font-display text-4xl text-sand-50">{{ offer.name }}</h3>
+            <p class="mt-3 max-w-md text-sm leading-relaxed text-sand-200">{{ offer.description }}</p>
+            <a routerLink="/offers" class="btn-glass mt-7 px-6 py-3">
+              See the terms
+              <app-icon name="arrow-right" [size]="14" />
+            </a>
+          </div>
+        </article>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ========================= Testimonials ========================= -->
+<section class="section bg-sand-50">
+  <div class="container-page" appReveal>
+    <app-testimonials [items]="testimonials" />
+    <p class="mt-12 text-center text-xs text-ink-500">
+      Placeholder quotes — real guest reviews will replace these.
+    </p>
+  </div>
+</section>
+
+<!-- ========================= Find us + Book your stay ========================= -->
+<section class="section overflow-hidden bg-sand-100" id="book-your-stay">
+  <div class="container-page grid gap-14 lg:grid-cols-2 lg:gap-20">
+    <div appReveal revealFrom="left">
+      <p class="eyebrow eyebrow-rule">Find us</p>
+      <h2 class="mt-6 font-display text-display-sm md:text-display lg:text-display-lg">
+        {{ site.address.street }}
+      </h2>
+      <address class="lede mt-6 not-italic">
+        {{ site.address.locality }}<br />
+        {{ site.address.region }} {{ site.address.postalCode }}, {{ site.address.country }}
+      </address>
+
+      <dl class="mt-10 grid gap-6 border-t border-ink-900/10 pt-8 sm:grid-cols-2">
+        <div>
+          <dt class="text-[0.65rem] tracking-[0.18em] text-ink-500 uppercase">Telephone</dt>
+          <dd class="mt-1.5 text-sm text-ink-900">
+            <a [href]="site.phoneHref" class="hover:text-clay-600">{{ site.phoneDisplay }}</a>
+          </dd>
+        </div>
+        <div>
+          <dt class="text-[0.65rem] tracking-[0.18em] text-ink-500 uppercase">E-mail</dt>
+          <dd class="mt-1.5 break-all text-sm text-ink-900">
+            <a [href]="'mailto:' + site.email" class="hover:text-clay-600">{{ site.email }}</a>
+          </dd>
+        </div>
+        <div>
+          <dt class="text-[0.65rem] tracking-[0.18em] text-ink-500 uppercase">Check-in</dt>
+          <dd class="mt-1.5 text-sm text-ink-900">{{ site.checkIn }}</dd>
+        </div>
+        <div>
+          <dt class="text-[0.65rem] tracking-[0.18em] text-ink-500 uppercase">Check-out</dt>
+          <dd class="mt-1.5 text-sm text-ink-900">{{ site.checkOut }}</dd>
+        </div>
+      </dl>
+
+      <a [href]="mapsHref" target="_blank" rel="noopener" class="link-underline mt-10">
+        <app-icon name="pin" [size]="14" />
+        Get directions
+      </a>
+    </div>
+
+    <div class="rounded-3xl bg-white p-7 shadow-[0_30px_80px_-40px_rgba(16,16,16,0.35)] md:p-10" appReveal revealFrom="right">
+      <h2 class="font-display text-display-sm">Book your stay</h2>
+      <p class="mt-3 mb-8 text-sm leading-relaxed text-ink-600">
+        Choose your nights and party size — we will show you which villas are free.
+      </p>
+      <app-booking-bar layout="stacked" />
+    </div>
+  </div>
+</section>

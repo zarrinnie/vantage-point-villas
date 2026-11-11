@@ -1,1 +1,340 @@
-/* You can add global styles to this file, and also import other style files */
+/* ==========================================================================
+   Vantage Point Villas — global stylesheet
+   Tailwind CSS v4 + design tokens ("monochrome editorial luxe")
+
+   A blend of the original warm editorial look with a monochrome, large-serif,
+   pill-button language. Token NAMES are kept from the first design so every
+   template keeps working; only their VALUES changed:
+     sand → cool off-whites   ink → neutral greys/blacks
+     palm → charcoal (dark bands)   clay → terracotta, now a sparing accent
+   ========================================================================== */
+@import 'tailwindcss';
+
+@theme {
+  /* ---- Palette ---------------------------------------------------------- */
+  /* Sand: page + section backgrounds (cool off-white) */
+  --color-sand-50: #fafaf9;
+  --color-sand-100: #f3f3f1;
+  --color-sand-200: #e6e6e3;
+  --color-sand-300: #d4d4d0;
+  --color-sand-400: #a9a9a6;
+
+  /* Ink: neutral greys to near-black */
+  --color-ink-500: #737373;
+  --color-ink-600: #4d4d4d;
+  --color-ink-700: #323232;
+  --color-ink-800: #191919;
+  --color-ink-900: #101010;
+
+  /* Clay: terracotta accent — use sparingly */
+  --color-clay-300: #ddab8d;
+  --color-clay-400: #c98c6b;
+  --color-clay-500: #b2734f;
+  --color-clay-600: #945b3c;
+
+  /* Palm: charcoal for inverted sections (name kept for compatibility) */
+  --color-palm-700: #2b2b2b;
+  --color-palm-800: #1c1c1c;
+  --color-palm-900: #141414;
+
+  /* ---- Typography ------------------------------------------------------- */
+  --font-display: 'Cormorant Garamond', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --text-display-sm: 2.5rem;
+  --text-display-sm--line-height: 1.12;
+  --text-display: 3rem;
+  --text-display--line-height: 1.1;
+  --text-display-lg: 4rem;
+  --text-display-lg--line-height: 1.09;
+  --text-display-xl: 5.75rem;
+  --text-display-xl--line-height: 1;
+
+  /* ---- Motion ----------------------------------------------------------- */
+  --animate-fade-up: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-fade-in: fade-in 1.2s ease both;
+  --animate-ken-burns: ken-burns 24s ease-in-out infinite alternate;
+
+  --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.75rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ken-burns {
+  from {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.09) translate3d(1%, -1.5%, 0);
+  }
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+@layer base {
+  :root {
+    color-scheme: light;
+    scroll-behavior: smooth;
+    /* Offset anchor scrolling for the fixed header */
+    scroll-padding-top: 6rem;
+  }
+
+  html,
+  body {
+    @apply bg-sand-50 text-ink-700;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.035em;
+    @apply text-ink-900;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-clay-500;
+  }
+
+  ::selection {
+    @apply bg-clay-500 text-sand-50;
+  }
+
+  img {
+    @apply max-w-full;
+  }
+
+  /* Hide number-input spinners in the booking forms */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+/* ==========================================================================
+   Components
+   ========================================================================== */
+@layer components {
+  /* ---- Buttons ---------------------------------------------------------- */
+  /* Shared base: every variant carries it, so templates can use a single class. */
+  .btn,
+  .btn-primary,
+  .btn-outline,
+  .btn-light,
+  .btn-solid-light,
+  .btn-glass {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border
+      px-8 py-3.5 text-[0.72rem] font-medium tracking-[0.14em] uppercase
+      transition-all duration-500 select-none;
+    transition-timing-function: var(--ease-editorial);
+  }
+
+  /* Black pill; terracotta only appears on hover. */
+  .btn-primary {
+    @apply border-ink-900 bg-ink-900 text-white hover:border-clay-600 hover:bg-clay-600;
+  }
+
+  /* Translucent pill for use over photography. */
+  .btn-glass {
+    @apply border-white/50 bg-[#7777771f] text-white backdrop-blur-sm
+      hover:border-white hover:bg-white hover:text-ink-900;
+  }
+
+  .btn-outline {
+    @apply border-ink-900/25 bg-transparent text-ink-900
+      hover:border-ink-900 hover:bg-ink-900 hover:text-sand-50;
+  }
+
+  .btn-light {
+    @apply border-white/45 bg-transparent text-white
+      hover:border-white hover:bg-white hover:text-ink-900;
+  }
+
+  .btn-solid-light {
+    @apply border-white bg-white text-ink-900 hover:border-sand-200 hover:bg-sand-200;
+  }
+
+  .btn:disabled,
+  .btn-primary:disabled,
+  .btn-outline:disabled,
+  .btn-light:disabled,
+  .btn-solid-light:disabled,
+  .btn-glass:disabled,
+  [aria-disabled='true'].btn-primary,
+  [aria-disabled='true'].btn-outline {
+    @apply cursor-not-allowed border-ink-500/25 bg-ink-500/20 text-ink-500
+      hover:border-ink-500/25 hover:bg-ink-500/20 hover:text-ink-500;
+  }
+
+  /* ---- Text link with animated rule ------------------------------------ */
+  .link-underline {
+    @apply relative inline-flex items-center gap-2 text-[0.7rem] font-medium
+      tracking-[0.18em] uppercase text-ink-900 transition-colors duration-300
+      hover:text-clay-600;
+  }
+
+  .link-underline::after {
+    @apply absolute -bottom-1 left-0 h-px w-full origin-left scale-x-100
+      bg-current transition-transform duration-500 content-[''];
+    transition-timing-function: var(--ease-editorial);
+  }
+
+  .link-underline:hover::after {
+    @apply origin-right scale-x-0;
+  }
+
+  /* ---- Eyebrow / kicker ------------------------------------------------- */
+  .eyebrow {
+    @apply flex items-center gap-3 text-[0.7rem] font-medium tracking-[0.22em]
+      uppercase text-ink-600;
+  }
+
+  .eyebrow-rule::before {
+    @apply block h-px w-10 bg-clay-500/70 content-[''];
+  }
+
+  /* ---- Lede: large, light body copy ------------------------------------ */
+  .lede {
+    @apply text-lg leading-8 font-light text-ink-700;
+  }
+
+  /* ---- Form controls ---------------------------------------------------- */
+  .field-label {
+    @apply mb-2 block text-[0.65rem] font-medium tracking-[0.22em] uppercase text-ink-500;
+  }
+
+  .field {
+    @apply w-full border border-sand-300 bg-white/70 px-4 py-3 text-sm text-ink-800
+      transition-colors duration-300 placeholder:text-ink-500/60
+      focus:border-clay-500 focus:bg-white focus:outline-none;
+  }
+
+  .field-invalid {
+    @apply border-red-700/60 bg-red-50/60;
+  }
+
+  .field-error {
+    @apply mt-1.5 flex items-center gap-1.5 text-xs text-red-800;
+  }
+
+  /* ---- Layout helpers -------------------------------------------------- */
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-10;
+  }
+
+  .container-prose {
+    @apply mx-auto w-full max-w-3xl px-4 sm:px-6;
+  }
+
+  .section {
+    @apply py-20 md:py-28 lg:py-32;
+  }
+
+  .rule {
+    @apply h-px w-full bg-ink-900/10;
+  }
+}
+
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
+
+/* Scroll-reveal: applied by the appReveal directive. Elements start hidden
+   only once JS adds .js-reveal, so SSR / no-JS output stays visible. */
+/* Deliberately unlayered: rules inside Tailwind's layers are out-cascaded by
+   unlayered styles, which would leave revealed elements stuck at opacity 0. */
+.js-reveal {
+  opacity: 0;
+  transform: translate3d(0, 1.75rem, 0);
+  transition:
+    opacity 0.9s var(--ease-editorial),
+    transform 0.9s var(--ease-editorial);
+  will-change: opacity, transform;
+}
+
+/* Horizontal slide-in variants (added alongside .js-reveal). */
+.js-reveal.js-reveal-right {
+  transform: translate3d(3rem, 0, 0);
+}
+
+.js-reveal.js-reveal-left {
+  transform: translate3d(-3rem, 0, 0);
+}
+
+.js-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@layer utilities {
+  /* Hide scrollbars on horizontal carousels */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .text-shadow-hero {
+    text-shadow: 0 2px 30px rgb(0 0 0 / 0.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .js-reveal,
+  .js-reveal.is-visible {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
