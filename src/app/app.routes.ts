@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { AdminComponent } from './admin/admin.component';
 
 /*
  * Page titles and descriptions are set by each page through SeoService, from
@@ -63,5 +64,9 @@ export const routes: Routes = [
   {
     path: '**',
     loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFoundPage),
+  },
+  {
+    path: 'admin',
+    component: AdminComponent,
   },
 ];
