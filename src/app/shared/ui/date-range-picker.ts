@@ -23,6 +23,7 @@ import {
 } from '../../core/utils/date.util';
 import { isPropertyClosed, isVillaBooked } from '../../core/utils/availability.util';
 import { nightsBetween } from '../../core/utils/date.util';
+import { ContentService } from '../../core/content/content.service';
 
 interface Day {
   iso: IsoDate;
@@ -53,9 +54,9 @@ const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 /**
  * Two-month range calendar with no external dependency.
  *
- * Unavailable dates come from the mock availability helper: property-wide
+ * Unavailable dates are the ranges closed in Admin → Availability: property-wide
  * closures are always disabled, and when a villa is being booked its own taken
- * nights are disabled too.
+ * nights are disabled too. Peak nights follow Admin → Pricing & seasons.
  */
 @Component({
   selector: 'app-date-range-picker',
@@ -182,6 +183,7 @@ export class DateRangePickerComponent {
   protected readonly hovered = signal<IsoDate | null>(null);
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly content = inject(ContentService);
   private readonly minDate = today();
   private readonly viewStart = signal<IsoDate>(startOfMonth(today()));
 
@@ -298,7 +300,7 @@ export class DateRangePickerComponent {
     const days: Day[] = [];
     for (let d = 1; d <= total; d++) {
       const iso = `${monthStart.slice(0, 7)}-${`${d}`.padStart(2, '0')}`;
-      const taken = villa ? isVillaBooked(villa, iso) : isPropertyClosed(iso);
+      const taken = this.isTaken(villa, iso);
 
       let disabled: boolean;
       if (iso < now) {
@@ -317,7 +319,7 @@ export class DateRangePickerComponent {
         label: d,
         disabled,
         closed: taken,
-        peak: isPeakNight(iso),
+        peak: isPeakNight(iso, this.content.pricing().peakSeasons),
         isStart: iso === from,
         isEnd: iso === to,
         inRange: !!from && !!previewEnd && iso > from && iso < previewEnd,
@@ -337,9 +339,13 @@ export class DateRangePickerComponent {
   private firstBlockedAfter(from: IsoDate, villa: string | null): IsoDate | null {
     for (let i = 1; i <= 60; i++) {
       const iso = addDays(from, i);
-      const taken = villa ? isVillaBooked(villa, iso) : isPropertyClosed(iso);
-      if (taken) return iso;
+      if (this.isTaken(villa, iso)) return iso;
     }
     return null;
+  }
+
+  private isTaken(villa: string | null, iso: IsoDate): boolean {
+    const rules = this.content.blocked();
+    return villa ? isVillaBooked(villa, iso, rules) : isPropertyClosed(iso, rules);
   }
 }

@@ -81,6 +81,13 @@ const PATHS: Record<string, readonly string[]> = {
   'chevron-down': ['M5 9l7 7 7-7'],
   menu: ['M4 7h16', 'M4 12h16', 'M4 17h16'],
   plus: ['M12 5v14', 'M5 12h14'],
+  'arrow-up': ['M12 20V5', 'M6 11l6-6 6 6'],
+  'chevron-up': ['M5 15l7-7 7 7'],
+  trash: ['M4 7h16', 'M9 7V4h6v3', 'M6 7l1 13h10l1-13', 'M10 11v6', 'M14 11v6'],
+  copy: ['M8 8h12v12H8z', 'M16 8V4H4v12h4'],
+  external: ['M14 4h6v6', 'M20 4l-9 9', 'M18 14v6H4V6h6'],
+  logout: ['M9 4H4v16h5', 'M16 8l4 4-4 4', 'M20 12H9'],
+  undo: ['M9 7L4 12l5 5', 'M4 12h11a5 5 0 0 1 0 10h-2'],
   minus: ['M5 12h14'],
   star: ['M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-3-5.2 3 1-5.9-4.3-4.1 5.9-.8z'],
   calendar: ['M4 6h16v15H4z', 'M4 10.5h16', 'M8 3v4', 'M16 3v4'],
@@ -104,6 +111,9 @@ const PATHS: Record<string, readonly string[]> = {
     'M9.5 7h5',
   ],
 };
+
+/** Every icon name, for pickers such as the admin's. */
+export const ICON_NAMES: readonly string[] = Object.keys(PATHS);
 
 @Component({
   selector: 'app-icon',

@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IconComponent } from './icon';
 import { Villa } from '../../core/models/villa.model';
 import { usd } from '../../core/utils/format.util';
+import { ContentService } from '../../core/content/content.service';
+import { coverOf } from '../../core/content/content.util';
 
 @Component({
   selector: 'app-villa-card',
@@ -31,7 +33,7 @@ import { usd } from '../../core/utils/format.util';
           <span
             class="absolute top-4 left-4 rounded-full bg-sand-50/95 px-3.5 py-1.5 text-[0.6rem] font-medium tracking-[0.22em] text-ink-800 uppercase"
           >
-            Most asked for
+            {{ copy().featuredBadge }}
           </span>
         }
       </a>
@@ -72,7 +74,7 @@ import { usd } from '../../core/utils/format.util';
 
         <div class="mt-7 flex items-center gap-6 pt-1">
           <a [routerLink]="['/villas', villa().slug]" class="link-underline">
-            View villa
+            {{ copy().viewButton }}
             <app-icon name="arrow-right" [size]="14" />
           </a>
           <a
@@ -80,7 +82,7 @@ import { usd } from '../../core/utils/format.util';
             [queryParams]="{ villa: villa().slug }"
             class="btn-outline ml-auto px-5 py-2.5 text-[0.65rem]"
           >
-            Book
+            {{ copy().bookButton }}
           </a>
         </div>
       </div>
@@ -90,6 +92,8 @@ import { usd } from '../../core/utils/format.util';
 export class VillaCardComponent {
   readonly villa = input.required<Villa>();
 
-  protected readonly cover = computed(() => this.villa().images[0]);
+  private readonly content = inject(ContentService);
+  protected readonly copy = computed(() => this.content.pages().shared.villaCard);
+  protected readonly cover = computed(() => coverOf(this.villa()));
   protected readonly rate = computed(() => `${usd(this.villa().nightlyRate)} / night`);
 }

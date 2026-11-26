@@ -52,14 +52,28 @@ describe('date utilities', () => {
     ]);
   });
 
-  it('knows the peak windows', () => {
-    expect(isPeakNight('2026-07-15')).toBe(true);
-    expect(isPeakNight('2026-08-31')).toBe(true);
-    expect(isPeakNight('2026-12-20')).toBe(true);
-    expect(isPeakNight('2027-01-05')).toBe(true);
-    expect(isPeakNight('2026-12-19')).toBe(false);
-    expect(isPeakNight('2027-01-06')).toBe(false);
-    expect(isPeakNight('2026-05-04')).toBe(false);
+  it('knows the yearly peak windows, including one that wraps over New Year', () => {
+    const seasons = [
+      { start: '2026-07-01', end: '2026-08-31', repeatsYearly: true },
+      { start: '2026-12-20', end: '2027-01-05', repeatsYearly: true },
+    ];
+    expect(isPeakNight('2026-07-15', seasons)).toBe(true);
+    expect(isPeakNight('2026-08-31', seasons)).toBe(true);
+    expect(isPeakNight('2026-12-20', seasons)).toBe(true);
+    expect(isPeakNight('2027-01-05', seasons)).toBe(true);
+    expect(isPeakNight('2026-12-19', seasons)).toBe(false);
+    expect(isPeakNight('2027-01-06', seasons)).toBe(false);
+    expect(isPeakNight('2026-05-04', seasons)).toBe(false);
+    // Yearly windows recur in later years too.
+    expect(isPeakNight('2030-07-15', seasons)).toBe(true);
+  });
+
+  it('limits a one-off peak window to its own dates', () => {
+    const seasons = [{ start: '2027-03-10', end: '2027-03-12', repeatsYearly: false }];
+    expect(isPeakNight('2027-03-11', seasons)).toBe(true);
+    expect(isPeakNight('2028-03-11', seasons)).toBe(false);
+    expect(isPeakNight('2027-03-13', seasons)).toBe(false);
+    expect(isPeakNight('2027-03-11', [])).toBe(false);
   });
 
   it('builds a Monday-first calendar grid', () => {
@@ -71,31 +85,35 @@ describe('date utilities', () => {
   });
 });
 
-describe('mock availability', () => {
-  it('is deterministic for the same villa and date', () => {
-    const first = isVillaBooked('ocean-breeze-villa', '2027-04-10');
-    for (let i = 0; i < 5; i++) {
-      expect(isVillaBooked('ocean-breeze-villa', '2027-04-10')).toBe(first);
-    }
+describe('availability', () => {
+  const rules = [
+    { villa: 'vantage-suite', start: '2027-04-10', end: '2027-04-12' },
+    { villa: '', start: '2027-06-01', end: '2027-06-01' },
+  ];
+
+  it('closes a villa only on its own closed nights', () => {
+    expect(isVillaBooked('vantage-suite', '2027-04-11', rules)).toBe(true);
+    expect(isVillaBooked('vantage-suite', '2027-04-13', rules)).toBe(false);
+    expect(isVillaBooked('ocean-breeze-villa', '2027-04-11', rules)).toBe(false);
+  });
+
+  it('closes every villa on a property-wide closure', () => {
+    expect(isVillaBooked('ocean-breeze-villa', '2027-06-01', rules)).toBe(true);
+    expect(isVillaBooked('vantage-suite', '2027-06-01', rules)).toBe(true);
   });
 
   it('treats a stay as unavailable when any of its nights is taken', () => {
-    // Find a night that is taken, then build a stay that contains it.
-    let taken: string | null = null;
-    for (let i = 0; i < 400 && !taken; i++) {
-      const date = addDays('2027-01-01', i);
-      if (isVillaBooked('vantage-suite', date)) taken = date;
-    }
-    expect(taken).not.toBeNull();
-
-    const checkIn = addDays(taken!, -1);
-    const checkOut = addDays(taken!, 2);
-    expect(isVillaAvailable('vantage-suite', checkIn, checkOut)).toBe(false);
-    expect(unavailableNights('vantage-suite', checkIn, checkOut)).toContain(taken);
+    expect(isVillaAvailable('vantage-suite', '2027-04-08', '2027-04-11', rules)).toBe(false);
+    expect(unavailableNights('vantage-suite', '2027-04-08', '2027-04-12', rules)).toEqual([
+      '2027-04-10',
+      '2027-04-11',
+    ]);
+    // Leaving on the first closed day is fine: that night is not slept.
+    expect(isVillaAvailable('vantage-suite', '2027-04-08', '2027-04-10', rules)).toBe(true);
   });
 
   it('rejects an empty or inverted range', () => {
-    expect(isVillaAvailable('vantage-suite', '2027-05-10', '2027-05-10')).toBe(false);
-    expect(isVillaAvailable('vantage-suite', '2027-05-12', '2027-05-10')).toBe(false);
+    expect(isVillaAvailable('vantage-suite', '2027-05-10', '2027-05-10', rules)).toBe(false);
+    expect(isVillaAvailable('vantage-suite', '2027-05-12', '2027-05-10', rules)).toBe(false);
   });
 });

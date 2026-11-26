@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { IconComponent } from './icon';
 import { BookingService } from '../../core/services/booking.service';
+import { ContentService } from '../../core/content/content.service';
 import { formatLong } from '../../core/utils/date.util';
 import { guestsLabel, nightsLabel, usd } from '../../core/utils/format.util';
 
@@ -86,10 +87,7 @@ import { guestsLabel, nightsLabel, usd } from '../../core/utils/format.util';
         @if (showNote()) {
           <p class="mt-6 flex gap-2.5 bg-sand-100 p-4 text-xs leading-relaxed text-ink-600">
             <app-icon name="info" [size]="15" class="mt-px shrink-0 text-clay-500" />
-            <span>
-              Rates are indicative placeholders. No payment is taken on this site — a confirmed
-              booking here is a request we answer by e-mail.
-            </span>
+            <span>{{ note() }}</span>
           </p>
         }
       </div>
@@ -98,6 +96,8 @@ import { guestsLabel, nightsLabel, usd } from '../../core/utils/format.util';
 })
 export class PriceSummaryComponent {
   readonly showNote = input(true);
+  private readonly content = inject(ContentService);
+  protected readonly note = computed(() => this.content.pages().shared.priceSummaryNote);
 
   private readonly booking = inject(BookingService);
 

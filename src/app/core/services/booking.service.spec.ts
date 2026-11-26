@@ -1,20 +1,28 @@
 import { TestBed } from '@angular/core/testing';
-import { BookingService, LONG_STAY_TIERS, PEAK_UPLIFT } from './booking.service';
-import { SITE } from '../data/site.data';
+import { BookingService } from './booking.service';
 import { VILLAS } from '../data/villas.data';
 import { EXTRAS } from '../data/extras.data';
-import { isVillaAvailable, isVillaBooked } from '../utils/availability.util';
+import { ContentService } from '../content/content.service';
+import { createDefaultContent } from '../content/default-content';
+import { BlockedRange } from '../content/content.model';
+import { isVillaAvailable } from '../utils/availability.util';
 import { addDays, isPeakNight, toIso } from '../utils/date.util';
 
 const VILLA = VILLAS[1]; // Two-Bedroom Garden Pool Villa: sleeps 5, min 2 nights
-const TAX = SITE.taxRate;
+const CONTENT = createDefaultContent();
+const PRICING = CONTENT.pricing;
+const TAX = PRICING.taxPercent / 100;
+
+/** One night the test villa is closed, a month out, set as an admin would. */
+const CLOSED_NIGHT = addDays(toIso(new Date()), 30);
+const RULES: BlockedRange[] = [{ villa: VILLA.slug, start: CLOSED_NIGHT, end: CLOSED_NIGHT, note: 'test' }];
 
 /** Walk forward from `from` until a stay of `nights` is free for the villa. */
 function freeRange(slug: string, nights: number, from: string): { checkIn: string; checkOut: string } {
   for (let i = 0; i < 400; i++) {
     const checkIn = addDays(from, i);
     const checkOut = addDays(checkIn, nights);
-    if (isVillaAvailable(slug, checkIn, checkOut)) return { checkIn, checkOut };
+    if (isVillaAvailable(slug, checkIn, checkOut, RULES)) return { checkIn, checkOut };
   }
   throw new Error(`No free ${nights}-night range found for ${slug}`);
 }
@@ -25,23 +33,17 @@ function freePeakRange(slug: string, nights: number): { checkIn: string; checkOu
   for (let i = 0; i < 45; i++) {
     const checkIn = addDays(july, i);
     const checkOut = addDays(checkIn, nights);
-    const allPeak = Array.from({ length: nights }, (_, n) => isPeakNight(addDays(checkIn, n))).every(
-      Boolean,
-    );
-    if (allPeak && isVillaAvailable(slug, checkIn, checkOut)) return { checkIn, checkOut };
+    const allPeak = Array.from({ length: nights }, (_, n) =>
+      isPeakNight(addDays(checkIn, n), PRICING.peakSeasons),
+    ).every(Boolean);
+    if (allPeak && isVillaAvailable(slug, checkIn, checkOut, RULES)) return { checkIn, checkOut };
   }
   throw new Error('No free peak range found');
 }
 
-/** A stay that is guaranteed to clash with a night the villa is already booked. */
-function blockedRange(slug: string, from: string): { checkIn: string; checkOut: string } {
-  for (let i = 1; i < 400; i++) {
-    const night = addDays(from, i);
-    if (isVillaBooked(slug, night)) {
-      return { checkIn: night, checkOut: addDays(night, 3) };
-    }
-  }
-  throw new Error('No blocked night found');
+/** A stay that contains the closed night. */
+function blockedRange(): { checkIn: string; checkOut: string } {
+  return { checkIn: addDays(CLOSED_NIGHT, -1), checkOut: addDays(CLOSED_NIGHT, 2) };
 }
 
 describe('BookingService', () => {
@@ -51,6 +53,7 @@ describe('BookingService', () => {
   beforeEach(() => {
     sessionStorage.clear();
     TestBed.configureTestingModule({});
+    TestBed.inject(ContentService).replace({ ...createDefaultContent(), availability: { blocked: RULES } });
     service = TestBed.inject(BookingService);
     tomorrow = addDays(toIso(new Date()), 1);
   });
@@ -103,8 +106,11 @@ describe('BookingService', () => {
 
     const quote = service.quote();
     expect(quote.hasPeakNights).toBe(true);
-    expect(quote.peakSupplement).toBeCloseTo(VILLA.nightlyRate * PEAK_UPLIFT * 3, 6);
-    expect(quote.lines.some((l) => l.label === 'Peak season supplement')).toBe(true);
+    expect(quote.peakSupplement).toBeCloseTo(
+      VILLA.nightlyRate * (PRICING.peakSupplementPercent / 100) * 3,
+      6,
+    );
+    expect(quote.lines.some((l) => l.label === PRICING.peakSupplementLabel)).toBe(true);
   });
 
   it('charges no supplement outside the peak windows', () => {
@@ -118,15 +124,31 @@ describe('BookingService', () => {
     expect(service.quote().peakSupplement).toBe(0);
   });
 
+  it('follows pricing rules edited in the admin', () => {
+    const content = TestBed.inject(ContentService);
+    content.replace({
+      ...content.content(),
+      pricing: { ...PRICING, taxPercent: 10, longStayTiers: [{ minNights: 3, discountPercent: 50, label: 'Half off' }] },
+    });
+    const { checkIn, checkOut } = freeRange(VILLA.slug, 3, `${new Date().getFullYear() + 1}-05-04`);
+    service.setDates(checkIn, checkOut);
+    service.selectVilla(VILLA.slug);
+
+    const quote = service.quote();
+    expect(quote.discount).toBeCloseTo(-VILLA.nightlyRate * 3 * 0.5, 6);
+    expect(quote.taxAndService).toBeCloseTo(quote.subtotal * 0.1, 6);
+    expect(quote.lines.some((l) => l.label === 'Half off')).toBe(true);
+  });
+
   it('reduces the rate for stays of seven nights and again at fourteen', () => {
     const seven = freeRange(VILLA.slug, 7, tomorrow);
     service.setDates(seven.checkIn, seven.checkOut);
     service.selectVilla(VILLA.slug);
 
     let quote = service.quote();
-    const sevenTier = LONG_STAY_TIERS.find((t) => t.minNights === 7)!;
+    const sevenTier = PRICING.longStayTiers.find((t) => t.minNights === 7)!;
     expect(quote.discount).toBeCloseTo(
-      -((quote.accommodation + quote.peakSupplement) * sevenTier.rate),
+      -((quote.accommodation + quote.peakSupplement) * (sevenTier.discountPercent / 100)),
       6,
     );
 
@@ -135,9 +157,9 @@ describe('BookingService', () => {
     service.selectVilla(VILLA.slug);
 
     quote = service.quote();
-    const fourteenTier = LONG_STAY_TIERS.find((t) => t.minNights === 14)!;
+    const fourteenTier = PRICING.longStayTiers.find((t) => t.minNights === 14)!;
     expect(quote.discount).toBeCloseTo(
-      -((quote.accommodation + quote.peakSupplement) * fourteenTier.rate),
+      -((quote.accommodation + quote.peakSupplement) * (fourteenTier.discountPercent / 100)),
       6,
     );
   });
@@ -183,7 +205,7 @@ describe('BookingService', () => {
 
   // ---- Availability & validation -----------------------------------------
   it('refuses a villa when any night of the stay is taken', () => {
-    const { checkIn, checkOut } = blockedRange(VILLA.slug, tomorrow);
+    const { checkIn, checkOut } = blockedRange();
     service.checkIn.set(checkIn);
     service.checkOut.set(checkOut);
     service.selectVilla(VILLA.slug);
@@ -224,7 +246,7 @@ describe('BookingService', () => {
     service.selectVilla(VILLA.slug);
     expect(service.villaSlug()).toBe(VILLA.slug);
 
-    const blocked = blockedRange(VILLA.slug, tomorrow);
+    const blocked = blockedRange();
     service.setDates(blocked.checkIn, blocked.checkOut);
     expect(service.villaSlug()).toBeNull();
   });
@@ -258,7 +280,7 @@ describe('BookingService', () => {
   });
 
   it('will not confirm a stay the villa cannot take', async () => {
-    const { checkIn, checkOut } = blockedRange(VILLA.slug, tomorrow);
+    const { checkIn, checkOut } = blockedRange();
     service.checkIn.set(checkIn);
     service.checkOut.set(checkOut);
     service.selectVilla(VILLA.slug);

@@ -1,7 +1,13 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  inject,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { routes } from './app.routes';
+import { ContentService } from './core/content/content.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -12,5 +18,7 @@ export const appConfig: ApplicationConfig = {
       withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' }),
     ),
     provideClientHydration(withEventReplay()),
+    // Make sure the editable content is in place before the first render.
+    provideAppInitializer(() => inject(ContentService).load()),
   ],
 };

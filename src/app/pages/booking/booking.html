@@ -11,18 +11,17 @@
 
     <div class="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
       <div>
-        <p class="eyebrow mb-4 text-clay-300">Reservations</p>
+        <p class="eyebrow mb-4 text-clay-300">{{ t().eyebrow }}</p>
         <h1 class="font-display text-display-sm text-sand-50 md:text-display">
           @if (confirmation()) {
-            Your villa is held
+            {{ t().confirmedTitle }}
           } @else {
-            Book your stay
+            {{ t().title }}
           }
         </h1>
       </div>
       <p class="max-w-sm text-sm leading-relaxed text-sand-200/80">
-        No payment is taken here. Confirming sends us a reservation request, which we answer by
-        e-mail — usually the same day.
+        {{ t().intro }}
       </p>
     </div>
   </div>
@@ -47,11 +46,9 @@
               <app-icon name="check" [size]="24" />
             </span>
 
-            <h2 class="mt-7 font-display text-3xl md:text-4xl">Thank you, {{ booked.guest.firstName }}</h2>
+            <h2 class="mt-7 font-display text-3xl md:text-4xl">{{ confirmationCopy().title }}</h2>
             <p class="mt-4 max-w-xl leading-relaxed text-ink-600">
-              We have your request for {{ booked.villaName }}. A confirmation will go to
-              <span class="text-ink-900">{{ booked.guest.email }}</span> with the deposit details and
-              directions to the villa.
+              {{ confirmationCopy().body }}
             </p>
 
             <dl class="mt-9 grid gap-x-10 gap-y-6 border-y border-ink-900/10 py-8 sm:grid-cols-2">
@@ -67,14 +64,14 @@
                 <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Check in</dt>
                 <dd class="mt-1.5 text-ink-800">
                   {{ formatLong(booked.checkIn) }}
-                  <span class="block text-xs text-ink-500">from 15:00</span>
+                  <span class="block text-xs text-ink-500">{{ site().checkIn }}</span>
                 </dd>
               </div>
               <div>
                 <dt class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Check out</dt>
                 <dd class="mt-1.5 text-ink-800">
                   {{ formatLong(booked.checkOut) }}
-                  <span class="block text-xs text-ink-500">by 11:00</span>
+                  <span class="block text-xs text-ink-500">{{ site().checkOut }}</span>
                 </dd>
               </div>
               <div>
@@ -110,10 +107,7 @@
 
             <p class="mt-8 flex gap-3 bg-sand-100 p-5 text-xs leading-relaxed text-ink-600">
               <app-icon name="info" [size]="15" class="mt-px shrink-0 text-clay-500" />
-              <span>
-                This is a demonstration booking. Nothing was sent and no card was charged — the
-                reference exists only in this browser session.
-              </span>
+              <span>{{ t().confirmation.demoNote }}</span>
             </p>
           </div>
         } @else {
@@ -121,9 +115,9 @@
           @if (step() === 1) {
             <div>
               <app-section-heading
-                eyebrow="Step one"
-                title="When would you like to come?"
-                lede="Check-in is from 15:00 and check-out by 11:00. Dates shown struck through are already taken."
+                [eyebrow]="t().steps.stay.eyebrow"
+                [title]="t().steps.stay.title"
+                [lede]="t().steps.stay.lede"
               />
 
               <div class="mt-10 border border-sand-300 bg-white/60 p-6 md:p-8">
@@ -166,8 +160,8 @@
           @if (step() === 2) {
             <div>
               <app-section-heading
-                eyebrow="Step two"
-                title="Choose your villa"
+                [eyebrow]="t().steps.villa.eyebrow"
+                [title]="t().steps.villa.title"
                 [lede]="villaStepLede()"
               />
 
@@ -260,13 +254,13 @@
           @if (step() === 3) {
             <div>
               <app-section-heading
-                eyebrow="Step three"
-                title="Anything to add?"
-                lede="All optional, all arranged before you arrive. You can add them later too."
+                [eyebrow]="t().steps.extras.eyebrow"
+                [title]="t().steps.extras.title"
+                [lede]="t().steps.extras.lede"
               />
 
               <ul class="mt-10 space-y-4">
-                @for (extra of booking.allExtras; track extra.id) {
+                @for (extra of booking.allExtras(); track extra.id) {
                   <li>
                     <label
                       class="flex cursor-pointer items-start gap-4 border p-5 transition-colors md:p-6"
@@ -308,9 +302,9 @@
           @if (step() === 4) {
             <div>
               <app-section-heading
-                eyebrow="Step four"
-                title="Who is coming?"
-                lede="We need enough to confirm the villa and meet you at the gate."
+                [eyebrow]="t().steps.details.eyebrow"
+                [title]="t().steps.details.title"
+                [lede]="t().steps.details.lede"
               />
 
               <form [formGroup]="form" class="mt-10 space-y-6" (ngSubmit)="submitDetails()">
@@ -454,9 +448,9 @@
           @if (step() === 5) {
             <div>
               <app-section-heading
-                eyebrow="Last step"
-                title="Check it over"
-                lede="Nothing is charged. Confirming sends the request to reservations."
+                [eyebrow]="t().steps.review.eyebrow"
+                [title]="t().steps.review.title"
+                [lede]="t().steps.review.lede"
               />
 
               <div class="mt-10 border border-sand-300 bg-white/60">
@@ -564,12 +558,14 @@
             }
           </div>
 
-          <p class="mt-10 text-sm text-ink-500">
-            Would rather use a platform?
-            <a [href]="site.bookingComUrl" target="_blank" rel="noopener" class="link-underline ml-1 text-ink-700">
-              Book on Booking.com
-            </a>
-          </p>
+          @if (site().bookingComUrl) {
+            <p class="mt-10 text-sm text-ink-500">
+              Would rather use a platform?
+              <a [href]="site().bookingComUrl" target="_blank" rel="noopener" class="link-underline ml-1 text-ink-700">
+                Book on Booking.com
+              </a>
+            </p>
+          }
         }
       </div>
 

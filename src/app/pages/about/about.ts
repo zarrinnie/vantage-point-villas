@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PageHeroComponent } from '../../shared/ui/page-hero';
 import { SectionHeadingComponent } from '../../shared/ui/section-heading';
@@ -7,11 +7,7 @@ import { CtaBandComponent } from '../../shared/ui/cta-band';
 import { TestimonialsComponent } from '../../shared/ui/testimonials';
 import { RevealDirective } from '../../core/services/reveal.directive';
 import { SeoService } from '../../core/services/seo.service';
-import { SITE } from '../../core/data/site.data';
-import { BENEFITS } from '../../core/data/benefits.data';
-import { NEARBY } from '../../core/data/nearby.data';
-import { TESTIMONIALS } from '../../core/data/testimonials.data';
-import { heroImg, img } from '../../core/data/images.data';
+import { ContentService } from '../../core/content/content.service';
 
 @Component({
   selector: 'app-about',
@@ -27,75 +23,50 @@ import { heroImg, img } from '../../core/data/images.data';
   ],
   template: `
     <app-page-hero
-      eyebrow="About"
-      title="Eight villas, looked after by hand"
-      lede="Vantage Point is a small property in Ungasan, run the way small properties should be: in person, and without a lobby."
-      [image]="heroImage"
+      [eyebrow]="t().hero.eyebrow"
+      [title]="t().hero.title"
+      [lede]="t().hero.lede"
+      [image]="t().hero.image"
       [crumbs]="[{ label: 'About' }]"
-      [meta]="[
-        { icon: 'pin', label: 'Jalan Toya Ning I, Ungasan' },
-        { icon: 'leaf', label: 'Walled tropical gardens' },
-        { icon: 'clock', label: 'Reception until 23:59' },
-      ]"
+      [meta]="t().hero.meta"
     />
 
     <!-- ---------- Story ---------- -->
     <section class="section bg-sand-50">
       <div class="container-page grid gap-14 lg:grid-cols-[1.1fr_1fr] lg:items-start lg:gap-20">
         <div appReveal>
-          <app-section-heading eyebrow="Our story" title="Why Ungasan, and not the strip" />
+          <app-section-heading [eyebrow]="t().story.eyebrow" [title]="t().story.title" />
 
           <div class="mt-9 space-y-6 text-[1.02rem] leading-[1.75] text-ink-600">
-            <p>
-              The Bukit peninsula has two characters. There is the coast road, with its cafés and
-              its traffic, and there is the village behind it — lanes, warungs, temple walls, and
-              gardens that have been growing for decades.
-            </p>
-            <p>
-              Vantage Point was built on the second one. The villas sit on Jalan Toya Ning I, a
-              quiet road in Ungasan, each on its own plot of 200 to 300 square metres. Every one
-              has a private pool, a tropical garden, a patio, a living room and a kitchen, and
-              every one is walled so that what happens inside stays inside.
-            </p>
-            <p>
-              It means a ten-minute drive to the sand at Green Bowl and twenty to the airport, but
-              it also means that at ten o'clock at night you can hear the frogs instead of the bass
-              from a beach club.
-            </p>
-            <p class="text-ink-500 italic">
-              Placeholder history — the founding year, the family behind the property and the story
-              of how it was built should replace these paragraphs.
-            </p>
+            @for (paragraph of t().story.paragraphs; track $index) {
+              <p>{{ paragraph }}</p>
+            }
+            @if (t().story.note) {
+              <p class="text-ink-500 italic">{{ t().story.note }}</p>
+            }
           </div>
 
           <div class="mt-10 flex flex-wrap items-center gap-7">
             <a routerLink="/villas" class="btn-outline">
-              See the villas
+              {{ t().story.primaryButton }}
               <app-icon name="arrow-right" [size]="15" />
             </a>
-            <a routerLink="/contact" class="link-underline">Come and visit</a>
+            <a routerLink="/contact" class="link-underline">{{ t().story.secondaryLink }}</a>
           </div>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2" appReveal>
-          <img
-            [src]="storyImages[0]"
-            alt="A stone path through the tropical garden of a villa"
-            loading="lazy"
-            decoding="async"
-            width="1000"
-            height="1400"
-            class="aspect-5/7 w-full object-cover sm:mt-10"
-          />
-          <img
-            [src]="storyImages[1]"
-            alt="The open-sided living pavilion of a villa"
-            loading="lazy"
-            decoding="async"
-            width="1000"
-            height="1400"
-            class="aspect-5/7 w-full object-cover"
-          />
+          @for (picture of t().story.images.slice(0, 2); track $index; let first = $first) {
+            <img
+              [src]="picture.url"
+              [alt]="picture.alt"
+              loading="lazy"
+              decoding="async"
+              width="1000"
+              height="1400"
+              [class]="first ? 'aspect-5/7 w-full object-cover sm:mt-10' : 'aspect-5/7 w-full object-cover'"
+            />
+          }
         </div>
       </div>
     </section>
@@ -103,7 +74,7 @@ import { heroImg, img } from '../../core/data/images.data';
     <!-- ---------- Numbers ---------- -->
     <section class="bg-palm-800 py-16 md:py-20">
       <div class="container-page grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-        @for (stat of stats; track stat.label) {
+        @for (stat of content.site().stats; track $index) {
           <div class="border-l border-sand-200/20 pl-6">
             <p class="font-display text-4xl text-sand-50 md:text-5xl">{{ stat.value }}</p>
             <p class="mt-2 text-[0.62rem] tracking-[0.2em] text-clay-300 uppercase">{{ stat.label }}</p>
@@ -116,13 +87,13 @@ import { heroImg, img } from '../../core/data/images.data';
     <section class="section bg-sand-50">
       <div class="container-page">
         <app-section-heading
-          eyebrow="How we work"
-          title="Four things we will not compromise on"
+          [eyebrow]="t().values.eyebrow"
+          [title]="t().values.title"
           align="center"
         />
 
         <div class="mt-16 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-          @for (benefit of benefits; track benefit.title; let i = $index) {
+          @for (benefit of all().benefits; track $index; let i = $index) {
             <div class="border-t border-ink-900/12 pt-7" [appReveal]="i * 90">
               <span class="flex size-11 items-center justify-center border border-clay-500/40 text-clay-600">
                 <app-icon [name]="benefit.icon" [size]="20" />
@@ -140,20 +111,20 @@ import { heroImg, img } from '../../core/data/images.data';
       <div class="container-page grid gap-14 lg:grid-cols-2 lg:items-center lg:gap-20">
         <div appReveal>
           <app-section-heading
-            eyebrow="The neighbourhood"
-            title="What is within reach"
-            lede="Distances as the property publishes them. A car or a scooter makes all of it easier — parking here is free."
+            [eyebrow]="t().neighbourhood.eyebrow"
+            [title]="t().neighbourhood.title"
+            [lede]="t().neighbourhood.lede"
           />
 
           <ul class="mt-10 divide-y divide-ink-900/10 border-y border-ink-900/10">
-            @for (place of nearby; track place.name) {
+            @for (place of all().nearby; track $index) {
               <li class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-4">
                 <div class="min-w-0">
                   <p class="text-[0.95rem] text-ink-900">
                     {{ place.name }}
                     @if (!place.verified) {
                       <span class="ml-2 text-[0.6rem] tracking-[0.15em] text-ink-500 uppercase">
-                        approx.
+                        {{ t().neighbourhood.approxLabel }}
                       </span>
                     }
                   </p>
@@ -168,8 +139,8 @@ import { heroImg, img } from '../../core/data/images.data';
         </div>
 
         <img
-          [src]="neighbourhoodImage"
-          alt="The coast of the Bukit peninsula near Ungasan"
+          [src]="t().neighbourhood.image"
+          [alt]="t().neighbourhood.imageAlt"
           loading="lazy"
           decoding="async"
           width="1400"
@@ -184,18 +155,18 @@ import { heroImg, img } from '../../core/data/images.data';
     <section class="section bg-sand-50">
       <div class="container-page">
         <app-section-heading
-          eyebrow="The team"
-          title="The people who are actually here"
-          lede="A small team lives this property daily — reservations, housekeeping, gardens and drivers."
+          [eyebrow]="t().team.eyebrow"
+          [title]="t().team.title"
+          [lede]="t().team.lede"
           align="center"
         />
 
         <div class="mx-auto mt-14 grid max-w-4xl gap-10 sm:grid-cols-3">
-          @for (member of team; track member.role; let i = $index) {
+          @for (member of t().team.members; track $index; let i = $index) {
             <div class="text-center" [appReveal]="i * 90">
               <img
                 [src]="member.image"
-                [alt]="member.role + ' at Vantage Point Villas (placeholder portrait)'"
+                [alt]="member.name + ', ' + member.role"
                 loading="lazy"
                 decoding="async"
                 width="800"
@@ -208,50 +179,33 @@ import { heroImg, img } from '../../core/data/images.data';
           }
         </div>
 
-        <p class="mt-10 text-center text-xs text-ink-500">
-          Placeholder names and portraits — replace with the real team.
-        </p>
+        @if (t().team.note) {
+          <p class="mt-10 text-center text-xs text-ink-500">{{ t().team.note }}</p>
+        }
       </div>
     </section>
 
     <!-- ---------- Quotes ---------- -->
     <section class="section bg-sand-100">
       <div class="container-page" appReveal>
-        <app-testimonials [items]="testimonials" />
+        <app-testimonials [items]="all().testimonials" />
       </div>
     </section>
 
     <app-cta-band
-      eyebrow="Visit"
-      title="Come and stay in Ungasan"
-      [lede]="site.intro"
+      [eyebrow]="t().cta.eyebrow"
+      [title]="t().cta.title"
+      [lede]="t().cta.lede || content.site().intro"
     />
   `,
 })
 export class AboutPage {
-  protected readonly site = SITE;
-  protected readonly stats = SITE.stats;
-  protected readonly benefits = BENEFITS;
-  protected readonly nearby = NEARBY;
-  protected readonly testimonials = TESTIMONIALS;
-
-  protected readonly heroImage = heroImg('about-hero');
-  protected readonly neighbourhoodImage = img('about-bukit', 1400, 1750);
-  protected readonly storyImages = [img('about-path', 1000, 1400), img('about-pavilion', 1000, 1400)];
-
-  /** PLACEHOLDER team. */
-  protected readonly team = [
-    { name: 'Placeholder Name', role: 'Reservations', image: img('team-1', 800, 800) },
-    { name: 'Placeholder Name', role: 'Villa host', image: img('team-2', 800, 800) },
-    { name: 'Placeholder Name', role: 'Grounds & pools', image: img('team-3', 800, 800) },
-  ];
+  protected readonly content = inject(ContentService);
+  protected readonly all = this.content.content;
+  protected readonly t = computed(() => this.content.pages().about);
 
   constructor() {
-    inject(SeoService).set({
-      title: 'About',
-      description:
-        'Vantage Point Villas is a small property on Jalan Toya Ning I in Ungasan, Uluwatu — private pool villas on walled plots of 200–300 sqm, run in person.',
-      image: this.heroImage,
-    });
+    const t = this.t();
+    inject(SeoService).set({ ...t.seo, image: t.hero.image });
   }
 }

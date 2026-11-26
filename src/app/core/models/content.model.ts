@@ -8,7 +8,8 @@ export interface NavItem {
 export interface FaqItem {
   readonly question: string;
   readonly answer: string;
-  readonly group: 'Booking' | 'Your stay' | 'The villas' | 'Getting here';
+  /** One of the content document's `faqGroups`. */
+  readonly group: string;
 }
 
 export interface Offer {

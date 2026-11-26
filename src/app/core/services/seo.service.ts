@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
-import { SITE } from '../data/site.data';
+import { ContentService } from '../content/content.service';
 
 export interface PageMeta {
   title: string;
@@ -13,9 +13,11 @@ export interface PageMeta {
 export class SeoService {
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
+  private readonly content = inject(ContentService);
 
   set({ title, description, image }: PageMeta): void {
-    const fullTitle = title.includes(SITE.name) ? title : `${title} — ${SITE.name}`;
+    const name = this.content.site().name;
+    const fullTitle = !name || title.includes(name) ? title : `${title} — ${name}`;
     this.title.setTitle(fullTitle);
     this.meta.updateTag({ name: 'description', content: description });
     this.meta.updateTag({ property: 'og:title', content: fullTitle });

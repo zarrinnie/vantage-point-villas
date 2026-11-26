@@ -303,6 +303,52 @@
   transform: none;
 }
 
+/* ---------------------------------------------------------------------------
+ * Admin — compact controls for the content editor at /admin
+ * ------------------------------------------------------------------------- */
+@layer components {
+  .adm-input {
+    @apply w-full rounded-md border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-900
+      transition-colors placeholder:text-ink-500/60
+      focus:border-clay-500 focus:ring-2 focus:ring-clay-500/20 focus:outline-none;
+  }
+
+  .adm-label {
+    @apply mb-1.5 block text-xs font-medium text-ink-700;
+  }
+
+  .adm-help {
+    @apply mt-1 text-xs leading-relaxed text-ink-500;
+  }
+
+  .adm-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-ink-900/15 bg-white
+      px-3 py-1.5 text-xs font-medium text-ink-800 transition-colors
+      hover:border-ink-900/40 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .adm-btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-clay-500 px-4 py-2 text-sm
+      font-medium text-white transition-colors hover:bg-clay-600
+      disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .adm-btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-red-700/30 bg-white
+      px-3 py-1.5 text-xs font-medium text-red-800 transition-colors
+      hover:border-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .adm-icon-btn {
+    @apply flex size-7 items-center justify-center rounded text-ink-500 transition-colors
+      hover:bg-ink-900/5 hover:text-ink-900 disabled:opacity-30 disabled:hover:bg-transparent;
+  }
+
+  .adm-card {
+    @apply rounded-xl border border-ink-900/10 bg-white;
+  }
+}
+
 @layer utilities {
   /* Hide scrollbars on horizontal carousels */
   .no-scrollbar {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DomSanitizer } from '@angular/platform-browser';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -7,9 +7,7 @@ import { SectionHeadingComponent } from '../../shared/ui/section-heading';
 import { IconComponent } from '../../shared/ui/icon';
 import { RevealDirective } from '../../core/services/reveal.directive';
 import { SeoService } from '../../core/services/seo.service';
-import { SITE } from '../../core/data/site.data';
-import { NEARBY } from '../../core/data/nearby.data';
-import { heroImg } from '../../core/data/images.data';
+import { ContentService } from '../../core/content/content.service';
 
 @Component({
   selector: 'app-contact',
@@ -24,15 +22,12 @@ import { heroImg } from '../../core/data/images.data';
   ],
   template: `
     <app-page-hero
-      eyebrow="Contact"
-      title="Talk to someone who is there"
-      lede="Reservations answer e-mail within a day. WhatsApp is faster, and reception is staffed until 23:59."
-      [image]="heroImage"
+      [eyebrow]="t().hero.eyebrow"
+      [title]="t().hero.title"
+      [lede]="t().hero.lede"
+      [image]="t().hero.image"
       [crumbs]="[{ label: 'Contact' }]"
-      [meta]="[
-        { icon: 'pin', label: 'Jalan Toya Ning I, Ungasan' },
-        { icon: 'clock', label: 'Reception until 23:59' },
-      ]"
+      [meta]="t().hero.meta"
     />
 
     <!-- ---------- Details + form ---------- -->
@@ -40,7 +35,7 @@ import { heroImg } from '../../core/data/images.data';
       <div class="container-page grid gap-14 lg:grid-cols-[1fr_1.25fr] lg:gap-20">
         <!-- Details -->
         <div appReveal>
-          <app-section-heading eyebrow="Get in touch" title="However suits you" />
+          <app-section-heading [eyebrow]="t().details.eyebrow" [title]="t().details.title" />
 
           <ul class="mt-10 space-y-8">
             <li class="flex items-start gap-5">
@@ -48,16 +43,16 @@ import { heroImg } from '../../core/data/images.data';
                 <app-icon name="whatsapp" [size]="19" />
               </span>
               <div>
-                <p class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">WhatsApp</p>
+                <p class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">{{ t().details.whatsappLabel }}</p>
                 <a
-                  [href]="site.whatsappHref"
+                  [href]="links().whatsapp"
                   target="_blank"
                   rel="noopener"
                   class="mt-1 block text-lg text-ink-900 transition-colors hover:text-clay-600"
                 >
-                  {{ site.whatsappDisplay }}
+                  {{ site().whatsapp }}
                 </a>
-                <p class="mt-1 text-xs text-ink-500">Fastest for anything about an existing booking.</p>
+                <p class="mt-1 text-xs text-ink-500">{{ t().details.whatsappNote }}</p>
               </div>
             </li>
 
@@ -66,18 +61,18 @@ import { heroImg } from '../../core/data/images.data';
                 <app-icon name="mail" [size]="19" />
               </span>
               <div>
-                <p class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Reservations</p>
+                <p class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">{{ t().details.emailLabel }}</p>
                 <a
-                  [href]="'mailto:' + site.reservationsEmail"
+                  [href]="links().reservationsEmail"
                   class="mt-1 block text-lg break-all text-ink-900 transition-colors hover:text-clay-600"
                 >
-                  {{ site.reservationsEmail }}
+                  {{ site().reservationsEmail }}
                 </a>
                 <a
-                  [href]="'mailto:' + site.email"
+                  [href]="links().email"
                   class="mt-1 block text-sm break-all text-ink-600 transition-colors hover:text-clay-600"
                 >
-                  {{ site.email }}
+                  {{ site().email }}
                 </a>
               </div>
             </li>
@@ -87,9 +82,9 @@ import { heroImg } from '../../core/data/images.data';
                 <app-icon name="phone" [size]="19" />
               </span>
               <div>
-                <p class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">Telephone</p>
-                <a [href]="site.phoneHref" class="mt-1 block text-lg text-ink-900 transition-colors hover:text-clay-600">
-                  {{ site.phoneDisplay }}
+                <p class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">{{ t().details.phoneLabel }}</p>
+                <a [href]="links().phone" class="mt-1 block text-lg text-ink-900 transition-colors hover:text-clay-600">
+                  {{ site().phone }}
                 </a>
               </div>
             </li>
@@ -99,24 +94,23 @@ import { heroImg } from '../../core/data/images.data';
                 <app-icon name="pin" [size]="19" />
               </span>
               <div>
-                <p class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">The property</p>
+                <p class="text-[0.6rem] tracking-[0.2em] text-ink-500 uppercase">{{ t().details.addressLabel }}</p>
                 <address class="mt-1 text-lg leading-snug text-ink-900 not-italic">
-                  {{ site.address.street }}<br />
-                  {{ site.address.locality }}<br />
-                  {{ site.address.region }} {{ site.address.postalCode }}<br />
-                  {{ site.address.country }}
+                  {{ site().address.street }}<br />
+                  {{ site().address.locality }}<br />
+                  {{ site().address.region }} {{ site().address.postalCode }}<br />
+                  {{ site().address.country }}
                 </address>
               </div>
             </li>
           </ul>
 
-          <p class="mt-10 bg-sand-100 p-5 text-xs leading-relaxed text-ink-600">
-            The address and check-in times are the property’s own. The telephone number, WhatsApp
-            number and e-mail addresses on this page are placeholders and are not monitored.
-          </p>
+          @if (t().details.note) {
+            <p class="mt-10 bg-sand-100 p-5 text-xs leading-relaxed text-ink-600">{{ t().details.note }}</p>
+          }
 
           <ul class="mt-8 flex items-center gap-3">
-            @for (social of site.socials; track social.label) {
+            @for (social of site().socials; track $index) {
               <li>
                 <a
                   [href]="social.href"
@@ -139,11 +133,8 @@ import { heroImg } from '../../core/data/images.data';
               <span class="flex size-12 items-center justify-center rounded-full bg-clay-500 text-white">
                 <app-icon name="check" [size]="24" />
               </span>
-              <h2 class="mt-7 font-display text-3xl">Message noted</h2>
-              <p class="mt-4 leading-relaxed text-ink-600">
-                Thank you — in a live site this would be with reservations now, and answered within
-                the day. On this demonstration site nothing left your browser.
-              </p>
+              <h2 class="mt-7 font-display text-3xl">{{ t().form.sentTitle }}</h2>
+              <p class="mt-4 leading-relaxed text-ink-600">{{ t().form.sentBody }}</p>
               <div class="mt-8 flex flex-wrap gap-4">
                 <button type="button" class="btn-outline" (click)="sent.set(false)">
                   Write another
@@ -153,14 +144,8 @@ import { heroImg } from '../../core/data/images.data';
             </div>
           } @else {
             <div class="border border-sand-300 bg-white/60 p-7 md:p-9">
-              <h2 class="font-display text-2xl md:text-3xl">Send us a message</h2>
-              <p class="mt-3 text-sm leading-relaxed text-ink-600">
-                For dates and prices the
-                <a routerLink="/book" class="text-ink-900 underline decoration-clay-500 underline-offset-4">
-                  booking form
-                </a>
-                is quicker — it shows the full price as you go.
-              </p>
+              <h2 class="font-display text-2xl md:text-3xl">{{ t().form.title }}</h2>
+              <p class="mt-3 text-sm leading-relaxed text-ink-600">{{ t().form.intro }}</p>
 
               <form [formGroup]="form" class="mt-8 space-y-6" (ngSubmit)="submit()">
                 <div class="grid gap-6 sm:grid-cols-2">
@@ -200,7 +185,7 @@ import { heroImg } from '../../core/data/images.data';
                 <div>
                   <label class="field-label" for="subject">What is it about?</label>
                   <select id="subject" class="field" formControlName="subject">
-                    @for (option of subjects; track option) {
+                    @for (option of subjects(); track $index) {
                       <option [value]="option">{{ option }}</option>
                     }
                   </select>
@@ -214,7 +199,7 @@ import { heroImg } from '../../core/data/images.data';
                     class="field resize-y"
                     [class.field-invalid]="invalid('message')"
                     formControlName="message"
-                    placeholder="Dates you have in mind, how many of you, anything you need…"
+                    [placeholder]="t().form.messagePlaceholder"
                   ></textarea>
                   @if (invalid('message')) {
                     <p class="field-error">
@@ -238,7 +223,7 @@ import { heroImg } from '../../core/data/images.data';
                 }
 
                 <button type="submit" class="btn-primary w-full justify-center sm:w-auto">
-                  Send message
+                  {{ t().form.submitButton }}
                   <app-icon name="arrow-right" [size]="15" />
                 </button>
               </form>
@@ -255,8 +240,8 @@ import { heroImg } from '../../core/data/images.data';
           <div class="order-2 lg:order-1" appReveal>
             <div class="aspect-4/3 w-full border border-sand-300 bg-sand-200">
               <iframe
-                [src]="mapUrl"
-                title="Map showing Vantage Point Villas on Jalan Toya Ning I, Ungasan, Bali"
+                [src]="mapUrl()"
+                [title]="'Map showing ' + site().name"
                 class="size-full"
                 loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade"
@@ -266,13 +251,13 @@ import { heroImg } from '../../core/data/images.data';
 
           <div class="order-1 lg:order-2" appReveal>
             <app-section-heading
-              eyebrow="Getting here"
-              title="From the airport"
-              lede="About 5 km and twenty minutes. Send us your flight number and a driver will be waiting."
+              [eyebrow]="t().gettingHere.eyebrow"
+              [title]="t().gettingHere.title"
+              [lede]="t().gettingHere.lede"
             />
 
             <ul class="mt-9 divide-y divide-ink-900/10 border-y border-ink-900/10">
-              @for (place of nearby; track place.name) {
+              @for (place of nearby(); track $index) {
                 <li class="flex items-baseline justify-between gap-5 py-3.5">
                   <p class="text-sm text-ink-800">{{ place.name }}</p>
                   <p class="shrink-0 text-[0.68rem] tracking-[0.1em] text-clay-600 uppercase">
@@ -283,7 +268,7 @@ import { heroImg } from '../../core/data/images.data';
             </ul>
 
             <a routerLink="/book" class="btn-outline mt-9">
-              Book a transfer with your stay
+              {{ t().gettingHere.button }}
               <app-icon name="arrow-right" [size]="15" />
             </a>
           </div>
@@ -296,39 +281,31 @@ export class ContactPage {
   private readonly fb = inject(FormBuilder);
   private readonly sanitizer = inject(DomSanitizer);
 
-  protected readonly site = SITE;
-  protected readonly nearby = NEARBY;
-  protected readonly heroImage = heroImg('contact-hero');
+  private readonly content = inject(ContentService);
+
+  protected readonly t = computed(() => this.content.pages().contact);
+  protected readonly site = this.content.site;
+  protected readonly links = this.content.links;
+  protected readonly nearby = computed(() => this.content.content().nearby);
+  protected readonly subjects = computed(() => this.t().form.subjects);
   protected readonly sent = signal(false);
 
-  protected readonly subjects = [
-    'A new booking',
-    'An existing booking',
-    'Transfers and transport',
-    'Larger groups (two villas)',
-    'Something else',
-  ];
-
-  /** Keyless Google Maps embed, built from the property's address. */
-  protected readonly mapUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
-    `https://www.google.com/maps?q=${encodeURIComponent(SITE.mapQuery)}&output=embed`,
+  /** Keyless Google Maps embed, built from the map search set in General settings. */
+  protected readonly mapUrl = computed(() =>
+    this.sanitizer.bypassSecurityTrustResourceUrl(this.links().mapsEmbed),
   );
 
   protected readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
-    subject: ['A new booking'],
+    subject: [this.subjects()[0] ?? ''],
     message: ['', [Validators.required, Validators.minLength(10)]],
     consent: [false, [Validators.requiredTrue]],
   });
 
   constructor() {
-    inject(SeoService).set({
-      title: 'Contact',
-      description:
-        'Reach Vantage Point Villas in Ungasan, Uluwatu — WhatsApp, e-mail, telephone and the address, plus how to get here from Ngurah Rai airport.',
-      image: this.heroImage,
-    });
+    const t = this.t();
+    inject(SeoService).set({ ...t.seo, image: t.hero.image });
   }
 
   protected invalid(control: keyof typeof this.form.controls): boolean {
@@ -346,6 +323,6 @@ export class ContactPage {
       return;
     }
     this.sent.set(true);
-    this.form.reset({ subject: 'A new booking', consent: false });
+    this.form.reset({ subject: this.subjects()[0] ?? '', consent: false });
   }
 }

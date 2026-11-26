@@ -36,7 +36,7 @@ import { Testimonial } from '../../core/models/content.model';
         </button>
 
         <ul class="flex items-center gap-2.5">
-          @for (item of items(); track item.quote; let i = $index) {
+          @for (item of items(); track $index; let i = $index) {
             <li>
               <button
                 type="button"

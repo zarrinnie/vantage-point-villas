@@ -13,7 +13,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/ro
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IconComponent } from '../ui/icon';
-import { MAIN_NAV, SITE } from '../../core/data/site.data';
+import { ContentService } from '../../core/content/content.service';
 
 @Component({
   selector: 'app-header',
@@ -39,23 +39,23 @@ import { MAIN_NAV, SITE } from '../../core/data/site.data';
         >
           <p class="flex items-center gap-2">
             <app-icon name="pin" [size]="13" />
-            {{ site.address.street }}, {{ site.address.locality }}, {{ site.address.region }}
+            {{ site().address.street }}, {{ site().address.locality }}, {{ site().address.region }}
           </p>
           <div class="flex items-center gap-6">
-            <a [href]="site.phoneHref" class="transition-colors hover:text-white" [attr.tabindex]="solid() ? -1 : 0">
-              {{ site.phoneDisplay }}
+            <a [href]="links().phone" class="transition-colors hover:text-white" [attr.tabindex]="solid() ? -1 : 0">
+              {{ site().phone }}
             </a>
             <a
-              [href]="site.whatsappHref"
+              [href]="links().whatsapp"
               target="_blank"
               rel="noopener"
               class="transition-colors hover:text-white"
               [attr.tabindex]="solid() ? -1 : 0"
             >
-              WhatsApp
+              {{ copy().utilityWhatsapp }}
             </a>
             <a routerLink="/contact" class="transition-colors hover:text-white" [attr.tabindex]="solid() ? -1 : 0">
-              Contact
+              {{ copy().utilityContact }}
             </a>
           </div>
         </div>
@@ -69,25 +69,25 @@ import { MAIN_NAV, SITE } from '../../core/data/site.data';
         <a
           routerLink="/"
           class="group flex flex-col leading-none"
-          [attr.aria-label]="site.name + ' — home'"
+          [attr.aria-label]="site().name + ' — home'"
         >
           <span
             class="font-display text-[1.45rem] tracking-[-0.02em] transition-colors md:text-[1.65rem]"
             [class]="solid() ? 'text-ink-900' : 'text-white'"
           >
-            Vantage Point
+            {{ copy().wordmark }}
           </span>
           <span
             class="mt-1 text-[0.55rem] font-medium tracking-[0.42em] uppercase transition-colors"
             [class]="solid() ? 'text-clay-600' : 'text-sand-200'"
           >
-            Villas · Uluwatu
+            {{ copy().wordmarkSub }}
           </span>
         </a>
 
         <!-- Desktop navigation -->
         <nav class="hidden items-center gap-9 lg:flex" aria-label="Main">
-          @for (item of nav; track item.path) {
+          @for (item of nav(); track item.path) {
             <a
               [routerLink]="item.path"
               routerLinkActive="after:scale-x-100"
@@ -101,7 +101,7 @@ import { MAIN_NAV, SITE } from '../../core/data/site.data';
 
         <div class="flex items-center gap-3">
           <a
-            [href]="site.whatsappHref"
+            [href]="links().whatsapp"
             target="_blank"
             rel="noopener"
             class="hidden size-10 items-center justify-center rounded-full border transition-colors md:flex"
@@ -120,7 +120,7 @@ import { MAIN_NAV, SITE } from '../../core/data/site.data';
             [class]="solid() ? 'btn-primary' : 'btn-glass'"
             class="hidden px-6 py-3 sm:inline-flex"
           >
-            Book now
+            {{ copy().bookButton }}
           </a>
 
           <!-- Mobile toggle -->
@@ -151,7 +151,7 @@ import { MAIN_NAV, SITE } from '../../core/data/site.data';
       <div class="flex flex-1 flex-col justify-center px-7 pt-24 pb-10">
         <nav aria-label="Mobile">
           <ul class="space-y-1">
-            @for (item of nav; track item.path; let i = $index) {
+            @for (item of nav(); track item.path; let i = $index) {
               <li>
                 <a
                   [routerLink]="item.path"
@@ -171,25 +171,25 @@ import { MAIN_NAV, SITE } from '../../core/data/site.data';
             class="btn-primary w-full justify-center"
             [attr.tabindex]="menuOpen() ? 0 : -1"
           >
-            Check availability
+            {{ copy().mobileBookButton }}
           </a>
           <a
-            [href]="site.whatsappHref"
+            [href]="links().whatsapp"
             target="_blank"
             rel="noopener"
             class="btn-outline w-full justify-center"
             [attr.tabindex]="menuOpen() ? 0 : -1"
           >
             <app-icon name="whatsapp" [size]="16" />
-            WhatsApp us
+            {{ copy().mobileWhatsappButton }}
           </a>
         </div>
 
         <address class="mt-10 space-y-1 text-sm not-italic text-ink-600">
-          <p>{{ site.address.street }}, {{ site.address.locality }}</p>
-          <p>{{ site.address.region }} {{ site.address.postalCode }}, {{ site.address.country }}</p>
+          <p>{{ site().address.street }}, {{ site().address.locality }}</p>
+          <p>{{ site().address.region }} {{ site().address.postalCode }}, {{ site().address.country }}</p>
           <p class="pt-2">
-            <a [href]="site.phoneHref" class="hover:text-clay-600">{{ site.phoneDisplay }}</a>
+            <a [href]="links().phone" class="hover:text-clay-600">{{ site().phone }}</a>
           </p>
         </address>
       </div>
@@ -197,8 +197,11 @@ import { MAIN_NAV, SITE } from '../../core/data/site.data';
   `,
 })
 export class HeaderComponent {
-  protected readonly site = SITE;
-  protected readonly nav = MAIN_NAV;
+  private readonly content = inject(ContentService);
+  protected readonly site = this.content.site;
+  protected readonly links = this.content.links;
+  protected readonly nav = computed(() => this.content.content().mainNav);
+  protected readonly copy = computed(() => this.content.pages().shared.header);
 
   protected readonly menuOpen = signal(false);
   private readonly scrolled = signal(false);

@@ -16,7 +16,7 @@ let instanceCount = 0;
   imports: [IconComponent],
   template: `
     <div class="divide-y divide-ink-900/10 border-y border-ink-900/10">
-      @for (item of items(); track item.question; let i = $index) {
+      @for (item of items(); track $index; let i = $index) {
         <div>
           <h3>
             <button

@@ -12,10 +12,11 @@ import { DateRange, DateRangePickerComponent } from '../../shared/ui/date-range-
 import { RevealDirective } from '../../core/services/reveal.directive';
 import { VillaService } from '../../core/services/villa.service';
 import { SeoService } from '../../core/services/seo.service';
-import { SITE } from '../../core/data/site.data';
-import { IsoDate, isPeakNight, nightsBetween, nightsOfStay } from '../../core/utils/date.util';
+import { ContentService } from '../../core/content/content.service';
+import { coverOf, fill } from '../../core/content/content.util';
+import { IsoDate, nightsBetween, nightsOfStay } from '../../core/utils/date.util';
+import { priceStay, taxRate } from '../../core/utils/pricing.util';
 import { nightsLabel, usd } from '../../core/utils/format.util';
-import { PEAK_UPLIFT } from '../../core/services/booking.service';
 
 @Component({
   selector: 'app-villa-detail',
@@ -37,6 +38,10 @@ export class VillaDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly villaService = inject(VillaService);
   private readonly seo = inject(SeoService);
+  private readonly content = inject(ContentService);
+
+  protected readonly t = computed(() => this.content.pages().villaDetail);
+  protected readonly links = this.content.links;
 
   private readonly slug = toSignal(this.route.paramMap.pipe(map((p) => p.get('slug'))), {
     initialValue: this.route.snapshot.paramMap.get('slug'),
@@ -68,14 +73,26 @@ export class VillaDetailPage {
     const to = this.checkOut();
     if (!v || !from || !to) return 0;
 
-    const nights = nightsOfStay(from, to);
-    const peak = nights.filter(isPeakNight).length;
-    const base = v.nightlyRate * nights.length + v.nightlyRate * PEAK_UPLIFT * peak;
-    const discounted = nights.length >= 14 ? base * 0.8 : nights.length >= 7 ? base * 0.85 : base;
-    return discounted * (1 + SITE.taxRate);
+    const pricing = this.content.pricing();
+    const { accommodation, peakSupplement, discount } = priceStay(
+      v.nightlyRate,
+      nightsOfStay(from, to),
+      pricing,
+    );
+    return (accommodation + peakSupplement + discount) * (1 + taxRate(pricing));
   });
 
-  protected readonly site = SITE;
+  /** Copy with {villaName} / {peakPercent} filled in for the villa on screen. */
+  protected readonly copy = computed(() => {
+    const t = this.t();
+    const vars = { ...this.content.vars(), villaName: this.villa()?.name ?? '' };
+    return {
+      rateNote: fill(t.rateNote, vars),
+      galleryTitle: fill(t.gallery.title, vars),
+      ctaTitle: fill(t.cta.title, vars),
+    };
+  });
+
   protected readonly money = usd;
 
   constructor() {
@@ -83,15 +100,15 @@ export class VillaDetailPage {
       const v = this.villa();
       if (!v) {
         this.seo.set({
-          title: 'Villa not found',
-          description: 'That villa could not be found. See all five villas at Vantage Point Villas.',
+          title: this.t().notFound.title,
+          description: this.t().notFound.body,
         });
         return;
       }
       this.seo.set({
         title: v.name,
         description: v.summary,
-        image: v.images[0].url,
+        image: coverOf(v).url,
       });
     });
   }

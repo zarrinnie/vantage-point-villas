@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IconComponent } from '../../shared/ui/icon';
 import { SectionHeadingComponent } from '../../shared/ui/section-heading';
@@ -8,16 +8,12 @@ import { VillaCarouselComponent } from '../../shared/ui/villa-carousel';
 import { RevealDirective } from '../../core/services/reveal.directive';
 import { VillaService } from '../../core/services/villa.service';
 import { SeoService } from '../../core/services/seo.service';
-import { SITE } from '../../core/data/site.data';
-import { AMENITIES } from '../../core/data/amenities.data';
-import { BENEFITS } from '../../core/data/benefits.data';
-import { NEARBY } from '../../core/data/nearby.data';
-import { OFFERS } from '../../core/data/offers.data';
-import { TESTIMONIALS } from '../../core/data/testimonials.data';
-import { EXPERIENCES } from '../../core/data/experiences.data';
-import { GALLERY } from '../../core/data/gallery.data';
-import { heroImg, img } from '../../core/data/images.data';
+import { ContentService } from '../../core/content/content.service';
+import { emphasise, fill } from '../../core/content/content.util';
 import { usd } from '../../core/utils/format.util';
+
+/** In-villa amenities shown on the home page; the house rules belong to the FAQ. */
+const HOUSE_RULES = ['nosmoking', 'nopets', 'family'];
 
 @Component({
   selector: 'app-home',
@@ -35,39 +31,39 @@ import { usd } from '../../core/utils/format.util';
 })
 export class HomePage {
   private readonly villaService = inject(VillaService);
+  private readonly content = inject(ContentService);
 
   protected readonly villas = this.villaService.villas;
-  protected readonly lowestRate = this.villaService.lowestRate();
+  protected readonly site = this.content.site;
+  protected readonly links = this.content.links;
+  protected readonly t = computed(() => this.content.pages().home);
 
-  protected readonly site = SITE;
-  protected readonly stats = SITE.stats;
-  protected readonly whatsapp = SITE.whatsappHref;
-  protected readonly mapsHref =
-    'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(SITE.mapQuery);
-  protected readonly experiences = EXPERIENCES;
-  /** Pool (tall), pavilion, kitchen (tall), terrace dinner — the logo tile sits between them. */
-  protected readonly mosaic = [GALLERY[0], GALLERY[1], GALLERY[5], GALLERY[6]];
-  protected readonly benefits = BENEFITS;
-  protected readonly nearby = NEARBY;
-  protected readonly testimonials = TESTIMONIALS;
-  protected readonly offers = OFFERS.slice(0, 2);
+  protected readonly heroTitle = computed(() => emphasise(this.t().hero.title));
+  protected readonly bookDirectNote = computed(() =>
+    fill(this.t().hero.bookDirectNote, { lowestRate: usd(this.villaService.lowestRate()) }),
+  );
 
-  /** The twelve in-villa amenities, leaving the house rules for the FAQ. */
-  protected readonly amenities = AMENITIES.filter(
-    (a) => !['nosmoking', 'nopets', 'family'].includes(a.id),
-  ).slice(0, 12);
+  /** Always four tiles, even if the admin saved fewer pictures. */
+  protected readonly mosaic = computed(() =>
+    [0, 1, 2, 3].map((i) => this.t().gallery.mosaic[i] ?? { url: '', alt: '' }),
+  );
 
-  protected readonly heroImage = heroImg('hero-main');
-  protected readonly leisureImage = img('leisure-dusk', 1400, 1600);
-
-  protected readonly money = usd;
+  protected readonly experiences = computed(() => this.content.content().experiences);
+  protected readonly benefits = computed(() => this.content.content().benefits);
+  protected readonly nearby = computed(() => this.content.content().nearby);
+  protected readonly testimonials = computed(() => this.content.content().testimonials);
+  protected readonly offers = computed(() =>
+    this.content.content().offers.slice(0, Math.max(0, this.t().offers.count)),
+  );
+  protected readonly amenities = computed(() =>
+    this.content
+      .amenities()
+      .filter((a) => !HOUSE_RULES.includes(a.id))
+      .slice(0, 12),
+  );
 
   constructor() {
-    inject(SeoService).set({
-      title: 'Vantage Point Villas — Private Pool Villas in Uluwatu, Bali',
-      description:
-        'Eight private pool villas in Ungasan, the quiet heart of Uluwatu. Walled tropical gardens, full kitchens, and the Bukit beaches ten minutes away.',
-      image: this.heroImage,
-    });
+    const t = this.t();
+    inject(SeoService).set({ ...t.seo, image: t.hero.image });
   }
 }

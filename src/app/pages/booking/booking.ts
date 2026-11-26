@@ -9,8 +9,8 @@ import { DateRange, DateRangePickerComponent } from '../../shared/ui/date-range-
 import { PriceSummaryComponent } from '../../shared/ui/price-summary';
 import { BookingService } from '../../core/services/booking.service';
 import { SeoService } from '../../core/services/seo.service';
-import { SITE } from '../../core/data/site.data';
-import { extraById } from '../../core/data/extras.data';
+import { ContentService } from '../../core/content/content.service';
+import { fill } from '../../core/content/content.util';
 import { BookingStep, Extra } from '../../core/models/booking.model';
 import { Villa } from '../../core/models/villa.model';
 import { formatLong, formatShort } from '../../core/utils/date.util';
@@ -36,8 +36,10 @@ export class BookingPage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
+  private readonly content = inject(ContentService);
 
-  protected readonly site = SITE;
+  protected readonly site = this.content.site;
+  protected readonly t = computed(() => this.content.pages().booking);
   protected readonly stepLabels = ['Stay', 'Villa', 'Extras', 'Details', 'Review'];
   protected readonly arrivalSlots = [
     'Before 15:00 (early arrival, subject to the villa being free)',
@@ -90,7 +92,21 @@ export class BookingPage {
   protected readonly bookedExtras = computed<Extra[]>(() => {
     const booked = this.confirmation();
     if (!booked) return [];
-    return booked.extraIds.map((id) => extraById(id)).filter((e): e is Extra => !!e);
+    return booked.extraIds
+      .map((id) => this.booking.extraById(id))
+      .filter((e): e is Extra => !!e);
+  });
+
+  protected readonly confirmationCopy = computed(() => {
+    const booked = this.confirmation();
+    const t = this.t().confirmation;
+    if (!booked) return { title: '', body: '' };
+    const vars = {
+      firstName: booked.guest.firstName,
+      villaName: booked.villaName,
+      email: booked.guest.email,
+    };
+    return { title: fill(t.title, vars), body: fill(t.body, vars) };
   });
 
   protected readonly formatLong = formatLong;
@@ -98,11 +114,7 @@ export class BookingPage {
   protected readonly money = usd;
 
   constructor() {
-    inject(SeoService).set({
-      title: 'Book your stay',
-      description:
-        'Choose your dates, pick a villa and see the full price before you confirm. Booking direct with Vantage Point Villas keeps the platform commission out of the rate.',
-    });
+    inject(SeoService).set(this.t().seo);
 
     // Seed the flow from a deep link, e.g. from a villa page or the hero search.
     const params = this.route.snapshot.queryParamMap;

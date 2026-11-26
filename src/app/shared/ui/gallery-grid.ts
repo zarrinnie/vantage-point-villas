@@ -23,7 +23,7 @@ import { GalleryImage } from '../../core/models/villa.model';
   imports: [IconComponent],
   template: `
     <ul [class]="gridClass()">
-      @for (image of images(); track image.url; let i = $index) {
+      @for (image of images(); track $index; let i = $index) {
         <li [class]="tall(image) && masonry() ? 'row-span-2' : ''">
           <button
             type="button"

@@ -3,9 +3,8 @@ import { PageHeroComponent } from '../../shared/ui/page-hero';
 import { GalleryGridComponent } from '../../shared/ui/gallery-grid';
 import { CtaBandComponent } from '../../shared/ui/cta-band';
 import { SeoService } from '../../core/services/seo.service';
-import { GALLERY, GALLERY_FILTERS } from '../../core/data/gallery.data';
 import { GalleryCategory } from '../../core/models/villa.model';
-import { heroImg } from '../../core/data/images.data';
+import { ContentService } from '../../core/content/content.service';
 
 @Component({
   selector: 'app-gallery',
@@ -13,11 +12,12 @@ import { heroImg } from '../../core/data/images.data';
   imports: [PageHeroComponent, GalleryGridComponent, CtaBandComponent],
   template: `
     <app-page-hero
-      eyebrow="Gallery"
-      title="The property, in pictures"
-      lede="The villas, the pools, the gardens, and the part of the Bukit they sit on."
-      [image]="heroImage"
+      [eyebrow]="t().hero.eyebrow"
+      [title]="t().hero.title"
+      [lede]="t().hero.lede"
+      [image]="t().hero.image"
       [crumbs]="[{ label: 'Gallery' }]"
+      [meta]="t().hero.meta"
     />
 
     <section class="section bg-sand-50">
@@ -25,7 +25,7 @@ import { heroImg } from '../../core/data/images.data';
         <!-- Filters -->
         <div class="mb-10 flex flex-wrap items-center justify-between gap-6 border-b border-ink-900/10 pb-6">
           <ul class="flex flex-wrap items-center gap-2" role="tablist" aria-label="Filter photographs">
-            @for (filter of filters; track filter.id) {
+            @for (filter of filters(); track filter.id) {
               <li>
                 <button
                   type="button"
@@ -49,36 +49,38 @@ import { heroImg } from '../../core/data/images.data';
 
         <app-gallery-grid [images]="images()" [columns]="3" />
 
-        <p class="mt-12 text-center text-xs text-ink-500">
-          Placeholder imagery, served from a stock-photo service. The property’s own photography
-          replaces it by editing a single helper in the data layer.
-        </p>
+        @if (t().note) {
+          <p class="mt-12 text-center text-xs text-ink-500">{{ t().note }}</p>
+        }
       </div>
     </section>
 
-    <app-cta-band
-      eyebrow="See it properly"
-      title="Photographs only get you so far"
-      lede="Pick your dates and come and stand in the garden instead."
-    />
+    <app-cta-band [eyebrow]="t().cta.eyebrow" [title]="t().cta.title" [lede]="t().cta.lede" />
   `,
 })
 export class GalleryPage {
-  protected readonly filters = GALLERY_FILTERS;
+  private readonly content = inject(ContentService);
+  protected readonly t = computed(() => this.content.pages().gallery);
+
+  /** "Everything", then only the categories that actually have photographs. */
+  protected readonly filters = computed(() => {
+    const { gallery, galleryCategories } = this.content.content();
+    const used = new Set(gallery.map((i) => i.category));
+    return [
+      { id: 'all', label: this.t().allFilterLabel },
+      ...galleryCategories.filter((c) => used.has(c.id)),
+    ];
+  });
   protected readonly active = signal<GalleryCategory | 'all'>('all');
-  protected readonly heroImage = heroImg('gallery-hero');
 
   protected readonly images = computed(() => {
     const category = this.active();
-    return category === 'all' ? GALLERY : GALLERY.filter((i) => i.category === category);
+    const all = this.content.content().gallery;
+    return category === 'all' ? all : all.filter((i) => i.category === category);
   });
 
   constructor() {
-    inject(SeoService).set({
-      title: 'Gallery',
-      description:
-        'Photographs of the villas, pools, gardens and grounds at Vantage Point Villas in Ungasan, Uluwatu.',
-      image: this.heroImage,
-    });
+    const t = this.t();
+    inject(SeoService).set({ ...t.seo, image: t.hero.image });
   }
 }

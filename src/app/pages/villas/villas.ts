@@ -6,7 +6,7 @@ import { CtaBandComponent } from '../../shared/ui/cta-band';
 import { RevealDirective } from '../../core/services/reveal.directive';
 import { VillaService } from '../../core/services/villa.service';
 import { SeoService } from '../../core/services/seo.service';
-import { heroImg } from '../../core/data/images.data';
+import { ContentService } from '../../core/content/content.service';
 import { usd } from '../../core/utils/format.util';
 
 type Sort = 'rate-asc' | 'rate-desc' | 'size-desc';
@@ -19,15 +19,23 @@ type Sort = 'rate-asc' | 'rate-desc' | 'size-desc';
 })
 export class VillasPage {
   private readonly villaService = inject(VillaService);
+  private readonly content = inject(ContentService);
+  protected readonly t = computed(() => this.content.pages().villas);
 
   protected readonly guests = signal(1);
   protected readonly bedrooms = signal(0);
   protected readonly sort = signal<Sort>('rate-asc');
 
-  protected readonly guestOptions = [1, 2, 3, 4, 5, 6, 7];
-  protected readonly bedroomOptions = [1, 2, 3];
-  protected readonly total = this.villaService.villas().length;
-  protected readonly heroImage = heroImg('villas-hero');
+  /** Filter options follow the largest villa, so new villas are always findable. */
+  protected readonly guestOptions = computed(() => {
+    const max = Math.max(1, ...this.villaService.villas().map((v) => v.maxGuests));
+    return Array.from({ length: max }, (_, i) => i + 1);
+  });
+  protected readonly bedroomOptions = computed(() => {
+    const max = Math.max(1, ...this.villaService.villas().map((v) => v.bedrooms));
+    return Array.from({ length: max }, (_, i) => i + 1);
+  });
+  protected readonly total = computed(() => this.villaService.villas().length);
   protected readonly money = usd;
 
   protected readonly isFiltered = computed(
@@ -54,12 +62,8 @@ export class VillasPage {
   });
 
   constructor() {
-    inject(SeoService).set({
-      title: 'The Villas',
-      description:
-        'Five private pool villas in Ungasan, Uluwatu — from a studio with a plunge pool to a three-bedroom house sleeping seven. Plots of 200–300 sqm, each with its own garden.',
-      image: this.heroImage,
-    });
+    const t = this.t();
+    inject(SeoService).set({ ...t.seo, image: t.hero.image });
   }
 
   protected setGuests(event: Event): void {

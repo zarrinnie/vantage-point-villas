@@ -9,29 +9,19 @@ import {
   QuoteLine,
 } from '../models/booking.model';
 import { Villa } from '../models/villa.model';
-import { EXTRAS, extraById } from '../data/extras.data';
-import { SITE } from '../data/site.data';
 import { VillaService } from './villa.service';
+import { ContentService } from '../content/content.service';
 import {
   IsoDate,
   addDays,
   isValidIso,
   nightsBetween,
   nightsOfStay,
-  isPeakNight,
   today,
 } from '../utils/date.util';
 import { isVillaAvailable, unavailableNights } from '../utils/availability.util';
+import { priceStay, taxRate } from '../utils/pricing.util';
 import { nightsLabel, usd } from '../utils/format.util';
-
-/** Uplift applied to nights that fall inside a peak window. PLACEHOLDER value. */
-export const PEAK_UPLIFT = 0.25;
-
-/** Long-stay reductions, mirroring the "Stay Longer, Pay Less" offer. */
-export const LONG_STAY_TIERS: readonly { minNights: number; rate: number }[] = [
-  { minNights: 14, rate: 0.2 },
-  { minNights: 7, rate: 0.15 },
-];
 
 const DRAFT_KEY = 'vpv.booking.draft.v1';
 const CONFIRMATION_KEY = 'vpv.booking.confirmation.v1';
@@ -64,6 +54,7 @@ interface PersistedDraft {
 @Injectable({ providedIn: 'root' })
 export class BookingService {
   private readonly villaService = inject(VillaService);
+  private readonly content = inject(ContentService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   // ---- Raw state ---------------------------------------------------------
@@ -78,7 +69,8 @@ export class BookingService {
   readonly confirmation = signal<BookingConfirmation | null>(null);
   readonly submitting = signal(false);
 
-  readonly allExtras = EXTRAS;
+  /** Every extra on offer, as edited in Admin → Services & extras. */
+  readonly allExtras = this.content.extras;
 
   constructor() {
     this.restore();
@@ -112,7 +104,7 @@ export class BookingService {
 
   readonly extras = computed(() =>
     this.extraIds()
-      .map((id) => extraById(id))
+      .map((id) => this.extraById(id))
       .filter((e): e is Extra => !!e),
   );
 
@@ -122,11 +114,12 @@ export class BookingService {
   readonly candidateVillas = computed(() => {
     const from = this.checkIn();
     const to = this.checkOut();
+    const rules = this.content.blocked();
     return this.villaService.fitsGuests(this.guests()).map((villa) => ({
       villa,
-      available: from && to ? isVillaAvailable(villa.slug, from, to) : true,
+      available: from && to ? isVillaAvailable(villa.slug, from, to, rules) : true,
       meetsMinNights: this.nights() === 0 || this.nights() >= villa.minNights,
-      blockedNights: from && to ? unavailableNights(villa.slug, from, to) : [],
+      blockedNights: from && to ? unavailableNights(villa.slug, from, to, rules) : [],
     }));
   });
 
@@ -146,7 +139,7 @@ export class BookingService {
     if (this.nights() < villa.minNights) {
       return `${villa.name} has a minimum stay of ${nightsLabel(villa.minNights)}.`;
     }
-    if (!isVillaAvailable(villa.slug, from, to)) {
+    if (!isVillaAvailable(villa.slug, from, to, this.content.blocked())) {
       return `${villa.name} is not free for every night of those dates.`;
     }
     return null;
@@ -283,14 +276,12 @@ export class BookingService {
       };
     }
 
-    const stayNights = nightsOfStay(from, to);
-    const peakNights = stayNights.filter(isPeakNight).length;
-
-    const accommodation = villa.nightlyRate * nights;
-    const peakSupplement = villa.nightlyRate * PEAK_UPLIFT * peakNights;
-
-    const tier = LONG_STAY_TIERS.find((t) => nights >= t.minNights);
-    const discount = tier ? -((accommodation + peakSupplement) * tier.rate) : 0;
+    const pricing = this.content.pricing();
+    const { accommodation, peakNights, peakSupplement, tier, discount } = priceStay(
+      villa.nightlyRate,
+      nightsOfStay(from, to),
+      pricing,
+    );
 
     const lines: QuoteLine[] = [
       {
@@ -302,16 +293,16 @@ export class BookingService {
 
     if (peakSupplement > 0) {
       lines.push({
-        label: 'Peak season supplement',
-        detail: `${nightsLabel(peakNights)} at +${Math.round(PEAK_UPLIFT * 100)}%`,
+        label: pricing.peakSupplementLabel,
+        detail: `${nightsLabel(peakNights)} at +${pricing.peakSupplementPercent}%`,
         amount: peakSupplement,
       });
     }
 
     if (tier && discount !== 0) {
       lines.push({
-        label: 'Stay Longer, Pay Less',
-        detail: `${Math.round(tier.rate * 100)}% off from ${tier.minNights} nights`,
+        label: tier.label,
+        detail: `${tier.discountPercent}% off from ${tier.minNights} nights`,
         amount: discount,
       });
     }
@@ -328,10 +319,10 @@ export class BookingService {
     }
 
     const subtotal = accommodation + peakSupplement + discount + extrasTotal;
-    const taxAndService = subtotal * SITE.taxRate;
+    const taxAndService = subtotal * taxRate(pricing);
     const total = subtotal + taxAndService;
 
-    lines.push({ label: SITE.taxLabel, amount: taxAndService });
+    lines.push({ label: `${pricing.taxLabel} (${pricing.taxPercent}%)`, amount: taxAndService });
 
     return {
       villa,
@@ -424,6 +415,10 @@ export class BookingService {
     return `VPV-${block().padEnd(4, 'X')}-${digits}`;
   }
 
+  extraById(id: string): Extra | undefined {
+    return this.content.extras().find((e) => e.id === id);
+  }
+
   /** Villas that sleep a given party, used by the quick-search bar. */
   villasFor(guests: number): Villa[] {
     return this.villaService.fitsGuests(guests);
@@ -447,7 +442,7 @@ export class BookingService {
       this.villaSlug.set(draft.villaSlug);
     }
     if (Array.isArray(draft.extraIds)) {
-      this.extraIds.set(draft.extraIds.filter((id) => !!extraById(id)));
+      this.extraIds.set(draft.extraIds.filter((id) => !!this.extraById(id)));
     }
     if (draft.guest) this.guest.set({ ...EMPTY_GUEST, ...draft.guest });
     if (draft.step >= 1 && draft.step <= 4) this.step.set(draft.step);

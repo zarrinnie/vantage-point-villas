@@ -1,15 +1,15 @@
 /** A single photograph used anywhere in the site. */
 export interface GalleryImage {
-  /** Full image URL. Produced by `img()` in `core/data/images.data.ts`. */
+  /** Full image URL: an upload (`/uploads/...`) or any external address. */
   readonly url: string;
   readonly alt: string;
   readonly width: number;
   readonly height: number;
-  /** Optional grouping used by the gallery page filters. */
+  /** Optional grouping used by the gallery page filters (an id from `galleryCategories`). */
   readonly category?: GalleryCategory;
 }
 
-export type GalleryCategory = 'villas' | 'pools' | 'interiors' | 'grounds' | 'uluwatu';
+export type GalleryCategory = string;
 
 export interface Amenity {
   readonly id: string;

@@ -42,3 +42,8 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Admin-edited content, uploaded photos and backups (see README)
+/data
+
+.env

@@ -5,24 +5,44 @@ import {
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
 import express from 'express';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { ContentStore } from './server/content-store';
+import { UploadStore } from './server/uploads';
+import { AdminAuth } from './server/auth';
+import { createApi } from './server/api';
+import type { ContentRequestContext } from './app/core/content/content.service';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
+
+/**
+ * Where the editable content lives. Defaults to `./data` in the directory the
+ * server is started from; point CONTENT_DIR at a persistent disk in production.
+ */
+const contentDir = resolve(process.env['CONTENT_DIR'] ?? 'data');
+
+const store = new ContentStore(contentDir);
+const uploads = new UploadStore(join(contentDir, 'uploads'));
+const auth = new AdminAuth(process.env['ADMIN_PASSWORD'], process.env['ADMIN_SECRET']);
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
-/**
- * Example Express Rest API endpoints can be defined here.
- * Uncomment and define endpoints as necessary.
- *
- * Example:
- * ```ts
- * app.get('/api/{*splat}', (req, res) => {
- *   // Handle API request
- * });
- * ```
- */
+app.disable('x-powered-by');
+
+/** Content and admin API. */
+app.use('/api', createApi(store, uploads, auth));
+
+/** Photos uploaded through the admin. Names are unique, so they never change. */
+app.use(
+  '/uploads',
+  express.static(uploads.dir, {
+    maxAge: '1y',
+    immutable: true,
+    index: false,
+    redirect: false,
+    setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
+  }),
+);
 
 /**
  * Serve static files from /browser
@@ -36,14 +56,22 @@ app.use(
 );
 
 /**
- * Handle all other requests by rendering the Angular application.
+ * Handle all other requests by rendering the Angular application, handing it
+ * the live content so the page is rendered with the latest saved version.
  */
 app.use((req, res, next) => {
-  angularApp
-    .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
+  store
+    .get()
+    .then((content) => {
+      const context: ContentRequestContext = { content };
+      return angularApp.handle(req, context);
+    })
+    .then((response) => {
+      if (!response) return next();
+      // The admin must never be cached by a proxy or the browser.
+      if (req.path.startsWith('/admin')) response.headers.set('Cache-Control', 'no-store');
+      return writeResponseToNodeResponse(response, res);
+    })
     .catch(next);
 });
 
@@ -59,6 +87,10 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     }
 
     console.log(`Node Express server listening on http://localhost:${port}`);
+    console.log(`Content is stored in ${contentDir}`);
+    if (!auth.configured) {
+      console.warn('[admin] ADMIN_PASSWORD is not set — nobody can sign in to /admin.');
+    }
   });
 }
 

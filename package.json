@@ -3,11 +3,11 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "node --env-file-if-exists=.env ./node_modules/@angular/cli/bin/ng.js serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:vantage-point-villas": "node dist/vantage-point-villas/server/server.mjs"
+    "serve:ssr:vantage-point-villas": "node --env-file-if-exists=.env dist/vantage-point-villas/server/server.mjs"
   },
   "private": true,
   "packageManager": "npm@11.19.0",

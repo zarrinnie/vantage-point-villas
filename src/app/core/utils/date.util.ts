@@ -86,18 +86,31 @@ export function formatMonthYear(iso: IsoDate, locale = 'en-GB'): string {
   return fromIso(iso).toLocaleDateString(locale, { month: 'long', year: 'numeric' });
 }
 
+/** The fields of a peak-season window that `isPeakNight` needs. */
+export interface SeasonWindow {
+  readonly start: IsoDate;
+  readonly end: IsoDate;
+  readonly repeatsYearly: boolean;
+}
+
 /**
- * Peak-season windows: July and August, plus 20 December – 5 January.
- * PLACEHOLDER definition — align it with the property's real rate calendar.
+ * True when the night falls inside any of the peak-season windows (both ends
+ * inclusive). A yearly window compares month and day only, and may wrap over
+ * New Year (e.g. 20 December – 5 January).
  */
-export function isPeakNight(iso: IsoDate): boolean {
-  const [, mStr, dStr] = iso.split('-');
-  const month = Number(mStr);
-  const day = Number(dStr);
-  if (month === 7 || month === 8) return true;
-  if (month === 12 && day >= 20) return true;
-  if (month === 1 && day <= 5) return true;
-  return false;
+export function isPeakNight(iso: IsoDate, seasons: readonly SeasonWindow[]): boolean {
+  return seasons.some((season) => inWindow(iso, season));
+}
+
+function inWindow(iso: IsoDate, { start, end, repeatsYearly }: SeasonWindow): boolean {
+  if (!isValidIso(start) || !isValidIso(end)) return false;
+  if (!repeatsYearly) return iso >= start && iso <= end;
+
+  const day = iso.slice(5);
+  const from = start.slice(5);
+  const to = end.slice(5);
+  // A window whose end month-day comes before its start wraps over New Year.
+  return from <= to ? day >= from && day <= to : day >= from || day <= to;
 }
 
 /** Monday-first weekday index (0 = Monday) for the calendar grid. */
