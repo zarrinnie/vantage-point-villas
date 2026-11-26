@@ -10,18 +10,22 @@ import { ContentStore } from './server/content-store';
 import { UploadStore } from './server/uploads';
 import { AdminAuth } from './server/auth';
 import { createApi } from './server/api';
+import { createStorage, DiskStorage } from './server/storage';
 import type { ContentRequestContext } from './app/core/content/content.service';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 /**
- * Where the editable content lives. Defaults to `./data` in the directory the
- * server is started from; point CONTENT_DIR at a persistent disk in production.
+ * Where the editable content lives. On a server with a disk that is CONTENT_DIR
+ * (`./data` by default). On Vercel, whose filesystem is read-only, setting
+ * BLOB_READ_WRITE_TOKEN switches the stores over to Vercel Blob and this path
+ * is never touched.
  */
 const contentDir = resolve(process.env['CONTENT_DIR'] ?? 'data');
 
-const store = new ContentStore(contentDir);
-const uploads = new UploadStore(join(contentDir, 'uploads'));
+const storage = createStorage(contentDir);
+const store = new ContentStore(storage);
+const uploads = new UploadStore(storage);
 const auth = new AdminAuth(process.env['ADMIN_PASSWORD'], process.env['ADMIN_SECRET']);
 
 const app = express();
@@ -32,17 +36,23 @@ app.disable('x-powered-by');
 /** Content and admin API. */
 app.use('/api', createApi(store, uploads, auth));
 
-/** Photos uploaded through the admin. Names are unique, so they never change. */
-app.use(
-  '/uploads',
-  express.static(uploads.dir, {
-    maxAge: '1y',
-    immutable: true,
-    index: false,
-    redirect: false,
-    setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
-  }),
-);
+/**
+ * Photos uploaded through the admin. Names are unique, so they never change.
+ * Only needed when they are on this server's disk: Vercel Blob serves its own
+ * public URLs and the photos never pass through here.
+ */
+if (storage instanceof DiskStorage) {
+  app.use(
+    '/uploads',
+    express.static(storage.path('uploads'), {
+      maxAge: '1y',
+      immutable: true,
+      index: false,
+      redirect: false,
+      setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
+    }),
+  );
+}
 
 /**
  * Serve static files from /browser
@@ -87,7 +97,7 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     }
 
     console.log(`Node Express server listening on http://localhost:${port}`);
-    console.log(`Content is stored in ${contentDir}`);
+    console.log(`Content is stored in ${store.describe}`);
     if (!auth.configured) {
       console.warn('[admin] ADMIN_PASSWORD is not set — nobody can sign in to /admin.');
     }

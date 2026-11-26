@@ -1,8 +1,15 @@
 {
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
+  "framework": null,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/vantage-point-villas/browser",
+  "functions": {
+    "api/index.mjs": {
+      "includeFiles": "dist/vantage-point-villas/**",
+      "maxDuration": 30
     }
+  },
+  "rewrites": [
+    { "source": "/", "destination": "/api" },
+    { "source": "/(.*)", "destination": "/api" }
   ]
 }

@@ -4,6 +4,8 @@ import { SiteContent } from '../core/content/content.model';
 export interface Session {
   signedIn: boolean;
   configured: boolean;
+  /** The largest photo this deployment accepts, in bytes. */
+  maxUploadBytes?: number;
 }
 
 export interface UploadInfo {

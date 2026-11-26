@@ -21,7 +21,7 @@ import { AdminStore } from '../admin-store.service';
       <span class="text-sm font-medium text-ink-900">
         {{ uploading() ? 'Uploading ' + uploading() + '…' : 'Drop photographs here, or click to choose' }}
       </span>
-      <span class="text-xs text-ink-500">JPEG, PNG, WebP, AVIF or GIF · up to 15 MB each</span>
+      <span class="text-xs text-ink-500">JPEG, PNG, WebP, AVIF or GIF · up to {{ maxMb() }} MB each</span>
       <input type="file" accept="image/*" multiple class="sr-only" (change)="choose($event)" />
     </label>
 
@@ -86,6 +86,8 @@ export class MediaLibraryComponent {
 
   protected readonly uploading = signal(0);
   protected readonly dragging = signal(false);
+  /** The server's own limit, which depends on where the site is deployed. */
+  protected readonly maxMb = computed(() => Math.floor(this.media.maxBytes() / (1024 * 1024)));
   protected readonly errors = signal<string[]>([]);
   protected readonly confirming = signal<string | null>(null);
   protected readonly copied = signal<string | null>(null);

@@ -24,7 +24,7 @@ import { withDefaults } from '../../core/content/default-content';
         <li class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div>
             <p class="text-sm text-ink-900">
-              Version replaced on {{ backup.savedAt | date: 'd MMMM y, HH:mm' }}
+              Published on {{ backup.savedAt | date: 'd MMMM y, HH:mm' }}
               @if (first) {
                 <span class="ml-2 rounded bg-sand-100 px-1.5 py-0.5 text-[0.65rem] text-ink-600">most recent</span>
               }
@@ -79,7 +79,7 @@ export class HistoryComponent {
   protected async restore(id: string): Promise<void> {
     await this.run(async () => {
       this.store.adopt(await this.api.restore(id));
-      this.notice.set('Restored. The live site shows that version again (the replaced one was kept here too).');
+      this.notice.set('Restored. The live site shows that version again (the one it replaced is still here).');
       this.confirming.set(null);
       await this.refresh();
     });

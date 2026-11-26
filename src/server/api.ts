@@ -2,7 +2,7 @@
  * CONTENT & ADMIN API
  * ----------------------------------------------------------------------------
  *   GET    /api/content                       public: the live content
- *   GET    /api/admin/session                 { signedIn, configured }
+ *   GET    /api/admin/session                 { signedIn, configured, maxUploadBytes }
  *   POST   /api/admin/login   { password }    sets the session cookie
  *   POST   /api/admin/logout
  *   PUT    /api/admin/content                 publish a new document
@@ -17,7 +17,7 @@
 import express, { Router, type NextFunction, type Request, type Response } from 'express';
 import { AdminAuth, isSecure } from './auth';
 import { ContentStore, ContentValidationError } from './content-store';
-import { MAX_UPLOAD_BYTES, UploadError, UploadStore } from './uploads';
+import { UploadError, UploadStore } from './uploads';
 
 export function createApi(store: ContentStore, uploads: UploadStore, auth: AdminAuth): Router {
   const api = Router();
@@ -34,7 +34,13 @@ export function createApi(store: ContentStore, uploads: UploadStore, auth: Admin
 
   // ---- Session ------------------------------------------------------------
   api.get('/admin/session', (req, res) => {
-    res.json({ signedIn: auth.isSignedIn(req), configured: auth.configured });
+    res.json({
+      signedIn: auth.isSignedIn(req),
+      configured: auth.configured,
+      // How large a photo this deployment can accept; the admin checks it
+      // before uploading so the guest gets a readable message, not a 413.
+      maxUploadBytes: uploads.maxBytes,
+    });
   });
 
   api.post('/admin/login', express.json({ limit: '10kb' }), (req, res) => {
@@ -88,7 +94,7 @@ export function createApi(store: ContentStore, uploads: UploadStore, auth: Admin
 
   api.post(
     '/admin/uploads',
-    express.raw({ type: () => true, limit: MAX_UPLOAD_BYTES }),
+    express.raw({ type: () => true, limit: uploads.maxBytes }),
     async (req, res) => {
       const name = req.get('x-file-name');
       res.status(201).json(await uploads.save(req.body, name ? decodeURIComponent(name) : undefined));
@@ -117,7 +123,8 @@ export function createApi(store: ContentStore, uploads: UploadStore, auth: Admin
     }
     const status = (error as { status?: number; type?: string }).status;
     if (status === 413) {
-      res.status(413).json({ error: 'That file is too large (15 MB at most).' });
+      const mb = Math.floor(uploads.maxBytes / (1024 * 1024));
+      res.status(413).json({ error: `That file is too large (${mb} MB at most).` });
       return;
     }
     if (status === 400) {

@@ -10,6 +10,14 @@ export class AdminMedia {
   readonly loaded = signal(false);
   readonly error = signal<string | null>(null);
 
+  /**
+   * The largest photo the server will accept. The server tells us through
+   * /api/admin/session, because it depends on where the site is deployed:
+   * 15 MB on a server with a disk, 4 MB on Vercel, whose functions cannot
+   * receive a larger request body.
+   */
+  readonly maxBytes = signal(15 * 1024 * 1024);
+
   async refresh(): Promise<void> {
     try {
       this.items.set(await this.api.uploads());
@@ -29,8 +37,10 @@ export class AdminMedia {
     if (!/^image\/(jpeg|png|webp|avif|gif)$/.test(file.type)) {
       throw new Error(`“${file.name}” is not a JPEG, PNG, WebP, AVIF or GIF image.`);
     }
-    if (file.size > 15 * 1024 * 1024) {
-      throw new Error(`“${file.name}” is larger than 15 MB. Resize it and try again.`);
+    const limit = this.maxBytes();
+    if (file.size > limit) {
+      const mb = Math.floor(limit / (1024 * 1024));
+      throw new Error(`“${file.name}” is larger than ${mb} MB. Resize it and try again.`);
     }
     try {
       const saved = await this.api.upload(file);
